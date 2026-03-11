@@ -1,46 +1,53 @@
 export const DAY18_EVENT_DAY = 18;
 export const DAY18_REWARD_POINTS = 30;
-export const DAY18_OUTFITS = [
-  {
-    id: "saukele",
-    name: "Саукеле",
-    description: "Высокий свадебный головной убор с золотыми акцентами."
-  },
-  {
-    id: "tyubeteika",
-    name: "Тюбетейка",
-    description: "Легкая национальная шапочка с орнаментом."
-  },
-  {
-    id: "chapan",
-    name: "Чапан",
-    description: "Праздничный образ с широким воротом и вышивкой."
-  }
-] as const;
 
-export type Day18OutfitId = (typeof DAY18_OUTFITS)[number]["id"];
+export type Day18QuestionId = string;
 
-export type Day18OverlayTransform = {
-  offsetX: number;
-  offsetY: number;
-  scale: number;
-  rotation: number;
+export type Day18QuestionPublic = {
+  id: Day18QuestionId;
+  prompt: string;
+  options: string[];
+  imageUrl: string;
+};
+
+export type Day18ResultEntry = {
+  displayName: string;
+  telegramUsername: string | null;
+  score: number;
 };
 
 export type Day18State =
   | {
       isAuthenticated: false;
       rewardPoints: number;
-      hasCapturedFirstPhoto: false;
-      captureCount: 0;
-      lastOutfitId: null;
+      bestScore: number;
+      lastScore: number;
+      questionCount: number;
+      hasCompletedQuiz: false;
+      questions: Day18QuestionPublic[];
+      leaderboard: Day18ResultEntry[];
       completedAt: null;
     }
   | {
       isAuthenticated: true;
       rewardPoints: number;
-      hasCapturedFirstPhoto: boolean;
-      captureCount: number;
-      lastOutfitId: Day18OutfitId | null;
+      bestScore: number;
+      lastScore: number;
+      questionCount: number;
+      hasCompletedQuiz: boolean;
+      questions: Day18QuestionPublic[];
+      leaderboard: Day18ResultEntry[];
       completedAt: string | null;
     };
+
+export type Day18SubmitResult = {
+  state: Day18State;
+  score: number;
+  totalQuestions: number;
+  answers: Array<{
+    questionId: Day18QuestionId;
+    selectedIndex: number;
+    correctIndex: number;
+    isCorrect: boolean;
+  }>;
+};

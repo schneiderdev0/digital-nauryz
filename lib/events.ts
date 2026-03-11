@@ -50,11 +50,11 @@ const baseEvents: EventDefinition[] = [
     dateLabel: "18 марта",
     slug: "day-18-outfit",
     title: "День национальной одежды",
-    subtitle: "AR-селфи",
-    description: "Примерьте национальные образы в AR, сделайте селфи и сохраните результат на память.",
-    pointsLabel: "+30 очков за первое фото",
+    subtitle: "Угадай элемент одежды",
+    description: "Пройдите квиз по национальной одежде, угадывайте элементы по иллюстрациям и улучшайте свой результат в рейтинге.",
+    pointsLabel: "+30 очков за первое прохождение",
     status: "upcoming",
-    tags: ["camera", "ar", "share"]
+    tags: ["quiz", "outfit", "leaderboard"]
   },
   {
     day: 19,

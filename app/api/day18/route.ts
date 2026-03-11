@@ -13,7 +13,7 @@ export async function GET() {
     return NextResponse.json(state);
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json(getPublicDay18State());
+      return NextResponse.json(await getPublicDay18State());
     }
 
     console.error("Day 18 state route failed:", error);

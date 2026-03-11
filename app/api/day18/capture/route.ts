@@ -1,35 +1,41 @@
 import { NextResponse } from "next/server";
 
-import { DAY18_OUTFITS } from "@/lib/day18";
-import { registerDay18Capture, requireDay18UserId } from "@/lib/day18-server";
+import type { Day18QuestionId } from "@/lib/day18";
+import { requireDay18UserId, submitDay18Quiz } from "@/lib/day18-server";
 
 export async function POST(request: Request) {
   try {
     const userId = await requireDay18UserId();
     const body = (await request.json().catch(() => null)) as
-      | { outfitId?: string }
+      | { answers?: Array<{ questionId?: string; selectedIndex?: number }> }
       | null;
-    const outfitId = body?.outfitId?.trim();
+    const answers =
+      body?.answers
+        ?.filter(
+          (answer): answer is { questionId: string; selectedIndex: number } =>
+            typeof answer?.questionId === "string" &&
+            typeof answer?.selectedIndex === "number"
+        )
+        .map((answer) => ({
+          questionId: answer.questionId as Day18QuestionId,
+          selectedIndex: answer.selectedIndex
+        })) ?? [];
 
-    if (!outfitId) {
-      return NextResponse.json({ error: "outfitId is required." }, { status: 400 });
+    if (!answers.length) {
+      return NextResponse.json({ error: "answers are required." }, { status: 400 });
     }
 
-    if (!DAY18_OUTFITS.some((outfit) => outfit.id === outfitId)) {
-      return NextResponse.json({ error: "Unknown outfit." }, { status: 400 });
-    }
-
-    const state = await registerDay18Capture(userId, outfitId as (typeof DAY18_OUTFITS)[number]["id"]);
-    return NextResponse.json(state);
+    const result = await submitDay18Quiz(userId, answers);
+    return NextResponse.json(result);
   } catch (error) {
     const status = error instanceof Error && error.message === "UNAUTHORIZED" ? 401 : 500;
 
     if (status === 500) {
-      console.error("Day 18 capture route failed:", error);
+      console.error("Day 18 quiz route failed:", error);
     }
 
     return NextResponse.json(
-      { error: status === 401 ? "Unauthorized" : "Failed to register day 18 capture." },
+      { error: status === 401 ? "Unauthorized" : "Failed to submit day 18 quiz." },
       { status }
     );
   }
