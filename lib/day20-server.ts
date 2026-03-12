@@ -634,20 +634,39 @@ export async function joinDay20RaceRoom(userId: string, inviteCode: string) {
     throw insertResult.error;
   }
 
-  const startResult = await client
+  await ensureParticipation(client, userId, { lastPvpRoomId: roomResult.data.id });
+
+  return getDay20State(userId);
+}
+
+export async function startDay20RaceRoom(userId: string) {
+  const client = getSupabaseAdminClient();
+  const room = await getOwnedDay20Room(client, userId);
+
+  if (room.status !== "waiting") {
+    throw new Error("RACE_NOT_WAITING");
+  }
+
+  if (!room.isOwner) {
+    throw new Error("RACE_START_FORBIDDEN");
+  }
+
+  if (room.members.length < 2) {
+    throw new Error("RACE_NOT_READY");
+  }
+
+  const result = await client
     .from("race_rooms")
     .update({
       status: "racing",
       started_at: new Date().toISOString()
     })
-    .eq("id", roomResult.data.id)
+    .eq("id", room.id)
     .eq("status", "waiting");
 
-  if (startResult.error) {
-    throw startResult.error;
+  if (result.error) {
+    throw result.error;
   }
-
-  await ensureParticipation(client, userId, { lastPvpRoomId: roomResult.data.id });
 
   return getDay20State(userId);
 }

@@ -12,7 +12,7 @@ export async function POST() {
       error instanceof Error && error.message === "ACTIVE_RACE_EXISTS"
         ? "У вас уже есть активный заезд."
         : error instanceof Error && error.message === "UNAUTHORIZED"
-          ? "Unauthorized"
+          ? "Сессия Telegram не подтверждена. Откройте мини-приложение заново."
           : "Failed to create race room.";
     const status =
       error instanceof Error && error.message === "UNAUTHORIZED"

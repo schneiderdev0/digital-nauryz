@@ -23,10 +23,10 @@ export async function POST() {
         ? "Активная комната не найдена."
         : error instanceof Error && error.message === "RACE_NOT_WAITING"
           ? "Комнату можно отменить только до старта."
-          : error instanceof Error && error.message === "RACE_CANCEL_FORBIDDEN"
+        : error instanceof Error && error.message === "RACE_CANCEL_FORBIDDEN"
             ? "Комнату может отменить только ее создатель."
             : status === 401
-              ? "Unauthorized"
+              ? "Сессия Telegram не подтверждена. Откройте мини-приложение заново."
               : "Failed to cancel race room.";
 
     if (status === 500) {

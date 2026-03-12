@@ -46,7 +46,15 @@ export function Day20SportsExperience() {
       return;
     }
 
-    setState(payload as Day20State);
+    const nextState = payload as Day20State;
+
+    setState((current) => {
+      if (current?.isAuthenticated && !nextState.isAuthenticated) {
+        return current;
+      }
+
+      return nextState;
+    });
     setRequestState("idle");
   };
 
@@ -264,6 +272,34 @@ export function Day20SportsExperience() {
     setRequestState("idle");
   };
 
+  const startRace = async () => {
+    setRequestState("loading");
+    setFeedback(null);
+
+    const response = await fetch("/api/day20/pvp/start", {
+      method: "POST",
+      credentials: "same-origin"
+    });
+    const payload = (await response.json().catch(() => null)) as
+      | Day20State
+      | { error?: string }
+      | null;
+
+    if (!response.ok || !payload || "error" in payload) {
+      setFeedback(
+        payload && "error" in payload
+          ? payload.error ?? "Не удалось запустить гонку."
+          : "Не удалось запустить гонку."
+      );
+      setRequestState("idle");
+      return;
+    }
+
+    setState(payload as Day20State);
+    setFeedback("Гонка началась.");
+    setRequestState("idle");
+  };
+
   const shareInviteCode = async (room: Day20RaceRoom) => {
     const text = `Подключайся к гонке в Цифровом Наурызе. Код комнаты: ${room.inviteCode}`;
 
@@ -475,7 +511,11 @@ export function Day20SportsExperience() {
                         <span style={{ color: "var(--muted)" }}>Код комнаты</span>
                         <strong style={{ fontSize: 34, letterSpacing: 3 }}>{pvpRoom.inviteCode}</strong>
                         <span style={{ color: "var(--muted)", textAlign: "center", lineHeight: 1.5 }}>
-                          Отправьте код второму участнику. Гонка стартует автоматически, как только он подключится.
+                          {pvpRoom.members.length < 2
+                            ? "Отправьте код второму участнику. Как только он подключится, можно будет вручную начать гонку."
+                            : pvpRoom.isOwner
+                              ? "Второй участник подключился. Нажмите кнопку ниже, чтобы честно стартовать одновременно."
+                              : "Вы подключились. Ожидайте, пока создатель комнаты начнет гонку."}
                         </span>
                       </div>
                       <button
@@ -485,6 +525,20 @@ export function Day20SportsExperience() {
                       >
                         Поделиться кодом
                       </button>
+                      {pvpRoom.members.length >= 2 ? (
+                        <button
+                          type="button"
+                          onClick={() => void startRace()}
+                          disabled={requestState === "loading" || !pvpRoom.isOwner}
+                          style={buttonStyle("primary", requestState === "loading" || !pvpRoom.isOwner)}
+                        >
+                          {pvpRoom.isOwner
+                            ? requestState === "loading"
+                              ? "Запускаем..."
+                              : "Начать гонку"
+                            : "Ждем старта"}
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         onClick={() => void cancelRace()}

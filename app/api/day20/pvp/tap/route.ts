@@ -30,7 +30,12 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { error: status === 401 ? "Unauthorized" : "Failed to register tap." },
+      {
+        error:
+          status === 401
+            ? "Сессия Telegram не подтверждена. Откройте мини-приложение заново."
+            : "Failed to register tap."
+      },
       { status }
     );
   }

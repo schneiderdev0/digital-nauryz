@@ -35,7 +35,7 @@ export async function POST(request: Request) {
               : error instanceof Error && error.message === "ACTIVE_RACE_EXISTS"
                 ? "Сначала завершите текущий заезд."
                 : status === 401
-                  ? "Unauthorized"
+                  ? "Сессия Telegram не подтверждена. Откройте мини-приложение заново."
                   : "Failed to join race room.";
 
     if (status === 500) {

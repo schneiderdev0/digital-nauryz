@@ -25,7 +25,12 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { error: status === 401 ? "Unauthorized" : "Failed to save solo run." },
+      {
+        error:
+          status === 401
+            ? "Сессия Telegram не подтверждена. Откройте мини-приложение заново."
+            : "Failed to save solo run."
+      },
       { status }
     );
   }
