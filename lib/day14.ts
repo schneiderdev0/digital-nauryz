@@ -1,3 +1,13 @@
+export type Day14ChatMessage = {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderUsername: string | null;
+  text: string;
+  createdAt: string;
+  isMine: boolean;
+};
+
 export type Day14MeetingState = {
   isAuthenticated: boolean;
   isSearching: boolean;
@@ -6,6 +16,7 @@ export type Day14MeetingState = {
     id: string;
     pairCode: string;
     myConfirmationCode: string;
+    myQrPayload: string;
     status: "pending" | "matched" | "confirmed" | "expired" | "reassigned";
     assignedAt: string;
     completedAt: string | null;
@@ -19,5 +30,6 @@ export type Day14MeetingState = {
       total: number;
       isConfirmedByMe: boolean;
     };
+    messages: Day14ChatMessage[];
   } | null;
 };

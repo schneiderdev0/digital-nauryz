@@ -333,6 +333,45 @@ export type Database = {
           }
         ];
       };
+      meeting_messages: {
+        Row: {
+          body: string;
+          created_at: string;
+          id: string;
+          pair_id: string;
+          sender_id: string;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          id?: string;
+          pair_id: string;
+          sender_id: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          id?: string;
+          pair_id?: string;
+          sender_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "meeting_messages_pair_id_fkey";
+            columns: ["pair_id"];
+            isOneToOne: false;
+            referencedRelation: "meeting_pairs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "meeting_messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       race_room_members: {
         Row: {
           id: string;

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import QRCode from "qrcode";
 
 import type { Day14MeetingState } from "@/lib/day14";
 import { LoadingRing } from "@/components/loading-ring";
@@ -12,9 +13,12 @@ type RequestState = "idle" | "loading";
 export function Day14MeetingsExperience() {
   const [state, setState] = useState<Day14MeetingState | null>(null);
   const [requestState, setRequestState] = useState<RequestState>("loading");
-  const [showCode, setShowCode] = useState(false);
+  const [showQr, setShowQr] = useState(false);
   const [partnerCodeInput, setPartnerCodeInput] = useState("");
+  const [messageInput, setMessageInput] = useState("");
+  const [messageState, setMessageState] = useState<RequestState>("idle");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   const loadState = async (showSpinner = false) => {
     if (showSpinner) {
@@ -50,7 +54,7 @@ export function Day14MeetingsExperience() {
       return;
     }
 
-    if (!state.isSearching && (!state.pair || state.pair.status === "confirmed")) {
+    if (!state.isSearching && !state.pair) {
       return;
     }
 
@@ -60,6 +64,24 @@ export function Day14MeetingsExperience() {
 
     return () => window.clearInterval(intervalId);
   }, [state]);
+
+  useEffect(() => {
+    const pair = state?.pair;
+
+    if (!pair || !showQr) {
+      setQrDataUrl(null);
+      return;
+    }
+
+    void QRCode.toDataURL(pair.myQrPayload, {
+      width: 220,
+      margin: 1,
+      color: {
+        dark: "#2e1b10",
+        light: "#fffdf9"
+      }
+    }).then(setQrDataUrl);
+  }, [showQr, state?.pair]);
 
   const submitAction = async (
     url: string,
@@ -93,6 +115,79 @@ export function Day14MeetingsExperience() {
     setRequestState("idle");
   };
 
+  const sendMessage = async () => {
+    if (!state?.pair || !messageInput.trim()) {
+      return;
+    }
+
+    setMessageState("loading");
+    setFeedback(null);
+
+    const response = await fetch("/api/day14/meeting/message", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        pairId: state.pair.id,
+        text: messageInput
+      })
+    });
+    const payload = (await response.json().catch(() => null)) as
+      | Day14MeetingState
+      | { error?: string }
+      | null;
+
+    if (!response.ok || !payload || "error" in payload) {
+      setFeedback(payload && "error" in payload ? payload.error ?? "Сообщение не отправлено." : "Сообщение не отправлено.");
+      setMessageState("idle");
+      return;
+    }
+
+    setState(payload as Day14MeetingState);
+    setMessageInput("");
+    setMessageState("idle");
+  };
+
+  const scanPartnerQr = async () => {
+    const pair = state?.pair;
+    const webApp = (window as Window & {
+      Telegram?: {
+        WebApp?: {
+          showScanQrPopup?: (
+            params: { text?: string },
+            callback: (value: string) => boolean | void
+          ) => void;
+          closeScanQrPopup?: () => void;
+        };
+      };
+    }).Telegram?.WebApp;
+
+    if (!pair) {
+      return;
+    }
+
+    if (!webApp?.showScanQrPopup) {
+      setFeedback("В этом клиенте Telegram сканер QR недоступен. Используйте ручной ввод кода партнера.");
+      return;
+    }
+
+    webApp.showScanQrPopup(
+      {
+        text: "Наведите камеру на QR-код участника, чтобы подтвердить встречу."
+      },
+      (value) => {
+        webApp.closeScanQrPopup?.();
+        void submitAction("/api/day14/meeting/confirm", {
+          body: JSON.stringify({ pairId: pair.id, scannedPayload: value }),
+          successMessage: "QR партнера считан. Встреча подтверждена."
+        });
+        return true;
+      }
+    );
+  };
+
   if (!state) {
     return <LoadingCard text="Загружаем состояние Дня встреч..." />;
   }
@@ -113,8 +208,12 @@ export function Day14MeetingsExperience() {
     requestState === "idle";
   const canConfirm =
     Boolean(pair?.status === "matched") &&
-    !pair?.confirmations.isConfirmedByMe &&
     requestState === "idle";
+  const messageCountLabel = pair ? String(pair.messages.length) : "0";
+  const canSendMessage = Boolean(pair && messageInput.trim() && messageState === "idle");
+  const partnerSearchLabel = pair?.partner.telegramUsername
+    ? `Напишите @${pair.partner.telegramUsername} в чате ниже и договоритесь, где встретиться.`
+    : "Напишите партнеру в чат ниже и договоритесь о месте встречи на площадке.";
 
   return (
     <section style={{ display: "grid", gap: 14 }}>
@@ -149,7 +248,7 @@ export function Day14MeetingsExperience() {
             </strong>
             <span style={{ color: "var(--muted)", lineHeight: 1.5 }}>
               {pair
-                ? "Найдите друг друга офлайн, покажите код встречи и подтвердите участие с двух сторон."
+                ? "Найдите друг друга на площадке, обменяйтесь сообщениями в чате и подтвердите встречу одним сканированием QR."
                 : state.isSearching
                   ? "Вы уже в очереди. Как только второй участник появится, пара будет создана автоматически."
                   : "Нажмите кнопку ниже, чтобы встать в очередь и получить реальную пару с другим участником."}
@@ -234,7 +333,7 @@ export function Day14MeetingsExperience() {
                 <span style={{ color: "var(--muted)" }}>
                   {pair.partner.telegramUsername ? `@${pair.partner.telegramUsername}` : "username не указан"}
                 </span>
-                <span>Найдите этого участника и обменяйтесь кодами подтверждения.</span>
+                <span>{partnerSearchLabel}</span>
               </div>
             </div>
 
@@ -246,7 +345,8 @@ export function Day14MeetingsExperience() {
               }}
             >
               <MetricCard label="Назначено" value={formatTime(pair.assignedAt)} />
-              <MetricCard label="Подтверждений" value={`${pair.confirmations.total}/2`} />
+              <MetricCard label="Статус" value={pair.status === "confirmed" ? "QR считан" : "Ждет скан"} />
+              <MetricCard label="Сообщений" value={messageCountLabel} />
               <MetricCard label="Перевыдач" value={`${state.reassignmentsUsed}/${MAX_REASSIGNMENTS}`} />
             </div>
           </>
@@ -267,19 +367,19 @@ export function Day14MeetingsExperience() {
           <div style={{ display: "grid", gap: 6 }}>
             <h3 style={{ margin: 0 }}>Подтверждение встречи</h3>
             <p style={{ margin: 0, color: "var(--muted)" }}>
-              Каждый участник видит только свой персональный код. Чтобы подтвердить встречу, нужно ввести код второго участника или позже отсканировать его QR.
+              У каждого участника есть свой QR и резервный код. Встреча считается подтвержденной сразу после того, как один из вас считает QR второго участника.
             </p>
           </div>
 
           <button
             type="button"
-            onClick={() => setShowCode((current) => !current)}
+            onClick={() => setShowQr((current) => !current)}
             style={buttonStyle("secondary")}
           >
-            {showCode ? "Скрыть мой код" : "Показать мой код"}
+            {showQr ? "Скрыть мой QR" : "Показать мой QR"}
           </button>
 
-          {showCode ? (
+          {showQr ? (
             <div
               style={{
                 display: "grid",
@@ -291,41 +391,43 @@ export function Day14MeetingsExperience() {
                 border: "1px solid rgba(79, 45, 24, 0.08)"
               }}
             >
-              <div
+              {qrDataUrl ? (
+                <img
+                  src={qrDataUrl}
+                  alt="QR-код подтверждения встречи"
+                  style={{
+                    width: 176,
+                    height: 176,
+                    borderRadius: 20,
+                    border: "2px solid var(--text)",
+                    background: "white",
+                    objectFit: "contain",
+                    padding: 10
+                  }}
+                />
+              ) : (
+                <LoadingRing size={48} label="Генерируем QR" />
+              )}
+              <strong
                 style={{
-                  width: 156,
-                  height: 156,
-                  borderRadius: 20,
-                  border: "2px solid var(--text)",
-                  display: "grid",
-                  placeItems: "center",
-                  color: "var(--text)",
-                  textAlign: "center",
-                  padding: 16,
-                  overflow: "hidden"
+                  maxWidth: "100%",
+                  fontSize: 18,
+                  letterSpacing: 1,
+                  lineHeight: 1.1,
+                  whiteSpace: "nowrap"
                 }}
               >
-                <strong
-                  style={{
-                    maxWidth: "100%",
-                    fontSize: 20,
-                    letterSpacing: 1,
-                    lineHeight: 1,
-                    whiteSpace: "nowrap"
-                  }}
-                >
-                  {pair.myConfirmationCode}
-                </strong>
-              </div>
+                {pair.myConfirmationCode}
+              </strong>
               <span style={{ color: "var(--muted)", textAlign: "center" }}>
-                Покажите этот код партнеру. На следующем этапе здесь будет QR с этим же токеном подтверждения.
+                Покажите этот QR партнеру. Если сканер не откроется, он сможет ввести резервный код вручную.
               </span>
             </div>
           ) : null}
 
-          {!pair.confirmations.isConfirmedByMe && pair.status === "matched" ? (
+          {pair.status === "matched" ? (
             <label style={{ display: "grid", gap: 8 }}>
-              <span>Введите код, который показал партнер</span>
+              <span>Резервный ввод кода партнера</span>
               <input
                 value={partnerCodeInput}
                 onChange={(event) => setPartnerCodeInput(event.target.value.toUpperCase())}
@@ -339,19 +441,24 @@ export function Day14MeetingsExperience() {
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button
               type="button"
-              onClick={() =>
-                void submitAction("/api/day14/meeting/confirm", {
-                  body: JSON.stringify({ pairId: pair.id, partnerCode: partnerCodeInput }),
-                  successMessage:
-                    pair.confirmations.total >= 1
-                      ? "Ваше подтверждение сохранено."
-                      : "Первое подтверждение сохранено. Ждем второго участника."
-                })
-              }
+              onClick={() => void scanPartnerQr()}
               disabled={!canConfirm}
               style={buttonStyle("primary", !canConfirm)}
             >
-              {pair.confirmations.isConfirmedByMe ? "Вы уже подтвердили встречу" : "Подтвердить по коду партнера"}
+              Сканировать QR партнера
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                void submitAction("/api/day14/meeting/confirm", {
+                  body: JSON.stringify({ pairId: pair.id, partnerCode: partnerCodeInput }),
+                  successMessage: "Код партнера принят. Встреча подтверждена."
+                })
+              }
+              disabled={!canConfirm || partnerCodeInput.trim().length < 6}
+              style={buttonStyle("secondary", !canConfirm || partnerCodeInput.trim().length < 6)}
+            >
+              Подтвердить по коду
             </button>
             <button
               type="button"
@@ -376,20 +483,96 @@ export function Day14MeetingsExperience() {
                 color: "var(--success)"
               }}
             >
-              Встреча подтверждена обеими сторонами. По 50 очков уже начислены в рейтинг.
-            </div>
-          ) : pair.confirmations.isConfirmedByMe ? (
-            <div
-              style={{
-                padding: "14px 16px",
-                borderRadius: 16,
-                background: "rgba(244, 209, 122, 0.28)",
-                color: "var(--accent-strong)"
-              }}
-            >
-              Ваше подтверждение сохранено. Как только второй участник нажмет кнопку, пара закроется автоматически.
+              QR считан, встреча подтверждена. По 50 очков уже начислены обоим участникам.
             </div>
           ) : null}
+        </section>
+      ) : null}
+
+      {pair ? (
+        <section
+          style={{
+            padding: 18,
+            borderRadius: 22,
+            background: "var(--surface-strong)",
+            border: "1px solid var(--line)",
+            display: "grid",
+            gap: 14
+          }}
+        >
+          <div style={{ display: "grid", gap: 6 }}>
+            <h3 style={{ margin: 0 }}>Чат пары</h3>
+            <p style={{ margin: 0, color: "var(--muted)" }}>
+              Напишите партнеру, чтобы быстрее найти друг друга на площадке.
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gap: 10,
+              maxHeight: 280,
+              overflowY: "auto",
+              paddingRight: 4
+            }}
+          >
+            {pair.messages.length ? (
+              pair.messages.map((message) => (
+                <div
+                  key={message.id}
+                  style={{
+                    justifySelf: message.isMine ? "end" : "start",
+                    maxWidth: "82%",
+                    padding: "12px 14px",
+                    borderRadius: 16,
+                    background: message.isMine
+                      ? "rgba(179, 73, 16, 0.12)"
+                      : "rgba(255, 255, 255, 0.82)",
+                    border: "1px solid var(--line)",
+                    display: "grid",
+                    gap: 4
+                  }}
+                >
+                  <strong style={{ fontSize: 13 }}>
+                    {message.isMine ? "Вы" : message.senderName}
+                  </strong>
+                  <span style={{ overflowWrap: "anywhere", lineHeight: 1.45 }}>
+                    {message.text}
+                  </span>
+                  <span style={{ color: "var(--muted)", fontSize: 12 }}>
+                    {formatMessageTime(message.createdAt)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <span style={{ color: "var(--muted)" }}>
+                Сообщений пока нет. Напишите первым и предложите место встречи.
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: "grid", gap: 10 }}>
+            <textarea
+              value={messageInput}
+              onChange={(event) => setMessageInput(event.target.value)}
+              placeholder="Например: Я у сцены рядом со стойкой регистрации."
+              maxLength={500}
+              style={{
+                ...inputStyle,
+                minHeight: 110,
+                resize: "vertical",
+                textTransform: "none"
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => void sendMessage()}
+              disabled={!canSendMessage}
+              style={buttonStyle("primary", !canSendMessage)}
+            >
+              {messageState === "loading" ? "Отправляем..." : "Отправить сообщение"}
+            </button>
+          </div>
         </section>
       ) : null}
 
@@ -537,6 +720,13 @@ const inputStyle = {
 };
 
 function formatTime(isoString: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(isoString));
+}
+
+function formatMessageTime(isoString: string) {
   return new Intl.DateTimeFormat("ru-RU", {
     hour: "2-digit",
     minute: "2-digit"

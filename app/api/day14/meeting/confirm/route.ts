@@ -1,22 +1,26 @@
 import { NextResponse } from "next/server";
 
 import {
-  getDay14MeetingState,
-  getMeetingConfirmationCode,
+  confirmDay14Meeting,
+  extractDay14QrData,
   requireDay14UserId
 } from "@/lib/day14-server";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   try {
     const userId = await requireDay14UserId();
     const body = (await request.json().catch(() => null)) as
-      | { pairId?: string; partnerCode?: string }
+      | { pairId?: string; partnerCode?: string; scannedPayload?: string }
       | null;
     const pairId = body?.pairId;
-    const partnerCode = body?.partnerCode?.trim().toUpperCase();
+    const scannedData = body?.scannedPayload
+      ? extractDay14QrData(body.scannedPayload)
+      : null;
+    const effectivePairId = pairId ?? scannedData?.pairId ?? null;
+    const partnerCode =
+      scannedData?.partnerCode ?? body?.partnerCode?.trim().toUpperCase() ?? null;
 
-    if (!pairId) {
+    if (!effectivePairId) {
       return NextResponse.json({ error: "pairId is required." }, { status: 400 });
     }
 
@@ -24,50 +28,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "partnerCode is required." }, { status: 400 });
     }
 
-    const adminClient = getSupabaseAdminClient();
-    const pairResult = await adminClient
-      .from("meeting_pairs")
-      .select("id, user_a_id, user_b_id, status")
-      .eq("id", pairId)
-      .single();
-
-    if (pairResult.error || !pairResult.data) {
-      return NextResponse.json({ error: "Pair not found." }, { status: 404 });
-    }
-
-    const pair = pairResult.data;
-    if (pair.status !== "matched") {
-      return NextResponse.json({ error: "Pair is no longer active." }, { status: 400 });
-    }
-
-    if (pair.user_a_id !== userId && pair.user_b_id !== userId) {
-      return NextResponse.json({ error: "Current user is not a member of this pair." }, { status: 403 });
-    }
-
-    const partnerUserId = pair.user_a_id === userId ? pair.user_b_id : pair.user_a_id;
-    const expectedPartnerCode = getMeetingConfirmationCode(pairId, partnerUserId);
-
-    if (partnerCode !== expectedPartnerCode) {
-      return NextResponse.json(
-        { error: "Код партнера неверный. Подтверждение возможно только после реальной встречи." },
-        { status: 400 }
-      );
-    }
-
-    const result = await adminClient.rpc("confirm_meeting_pair", {
-      p_pair_id: pairId,
-      p_user_id: userId
-    });
-
-    if (result.error) {
-      throw result.error;
-    }
-
-    const state = await getDay14MeetingState(userId);
+    const state = await confirmDay14Meeting(userId, effectivePairId, partnerCode);
     return NextResponse.json(state);
   } catch (error) {
-    const status = error instanceof Error && error.message === "UNAUTHORIZED" ? 401 : 500;
-    const message = status === 401 ? "Unauthorized" : "Failed to confirm meeting pair.";
+    const status =
+      error instanceof Error && error.message === "UNAUTHORIZED"
+        ? 401
+        : error instanceof Error &&
+            (error.message === "INVALID_PARTNER_CODE" ||
+              error.message === "PAIR_NOT_ACTIVE")
+          ? 400
+          : error instanceof Error && error.message === "PAIR_FORBIDDEN"
+            ? 403
+            : error instanceof Error && error.message === "PAIR_NOT_FOUND"
+              ? 404
+              : 500;
+    const message =
+      status === 401
+        ? "Unauthorized"
+        : error instanceof Error && error.message === "INVALID_PARTNER_CODE"
+          ? "QR или код партнера неверный. Подтверждение возможно только после реальной встречи."
+          : error instanceof Error && error.message === "PAIR_NOT_ACTIVE"
+            ? "Пара уже закрыта или больше недоступна."
+            : status === 403
+              ? "Current user is not a member of this pair."
+              : status === 404
+                ? "Pair not found."
+                : "Failed to confirm meeting pair.";
 
     return NextResponse.json({ error: message }, { status });
   }

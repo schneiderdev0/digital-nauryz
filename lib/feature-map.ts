@@ -7,7 +7,8 @@ export const featureMap = {
   ],
   day14: [
     "Pair matching",
-    "Mutual QR confirmation",
+    "Pair chat",
+    "Single-scan QR confirmation",
     "Reassignment flow",
     "Admin pair control"
   ],
