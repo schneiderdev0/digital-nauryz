@@ -1,14 +1,27 @@
 import Link from "next/link";
 
+import type { AppLocale } from "@/lib/locale";
 import { demoLeaderboard } from "@/lib/mock-data";
 
-export function LeaderboardPreview() {
+export function LeaderboardPreview({ locale }: { locale: AppLocale }) {
+  const copy = locale === "kk"
+    ? {
+        title: "Көшбасшылар тақтасы",
+        all: "Толық рейтинг",
+        streak: "Белсенділік сериясы"
+      }
+    : {
+        title: "Лидерборд",
+        all: "Весь рейтинг",
+        streak: "Серия активностей"
+      };
+
   return (
     <section style={{ display: "grid", gap: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-        <h2 style={{ margin: 0, fontSize: 22 }}>Лидерборд</h2>
+        <h2 style={{ margin: 0, fontSize: 22 }}>{copy.title}</h2>
         <Link href="/leaderboard" style={{ color: "var(--accent-strong)" }}>
-          Весь рейтинг
+          {copy.all}
         </Link>
       </div>
 
@@ -44,7 +57,7 @@ export function LeaderboardPreview() {
             <div>
               <div style={{ fontWeight: 700 }}>{entry.name}</div>
               <div style={{ color: "var(--muted)", fontSize: 13 }}>
-                Серия активностей: {entry.streak}
+                {copy.streak}: {entry.streak}
               </div>
             </div>
             <strong>{entry.score}</strong>

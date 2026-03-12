@@ -9,7 +9,7 @@ import { LoadingRing } from "@/components/loading-ring";
 
 type RequestState = "idle" | "loading";
 
-export function Day17FamilyExperience() {
+export function Day17FamilyExperience({ locale: _locale = "ru" }: { locale?: AppLocale }) {
   const searchParams = useSearchParams();
   const [state, setState] = useState<Day17State | null>(null);
   const [requestState, setRequestState] = useState<RequestState>("loading");
@@ -517,3 +517,4 @@ const cardStyle = {
   display: "grid",
   gap: 14
 } as const;
+import type { AppLocale } from "@/lib/locale";

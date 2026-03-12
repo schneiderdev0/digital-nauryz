@@ -14,7 +14,7 @@ type RequestState = "idle" | "loading";
 const RECEIVED_SEEN_STORAGE_KEY = "digital-nauryz:day15:received-seen";
 const RECIPIENTS_PAGE_SIZE = 12;
 
-export function Day15KindnessExperience() {
+export function Day15KindnessExperience({ locale: _locale = "ru" }: { locale?: AppLocale }) {
   const [state, setState] = useState<Day15State | null>(null);
   const [requestState, setRequestState] = useState<RequestState>("loading");
   const [recipientId, setRecipientId] = useState("");
@@ -838,3 +838,4 @@ function buttonStyle(disabled: boolean) {
     opacity: disabled ? 0.55 : 1
   };
 }
+import type { AppLocale } from "@/lib/locale";

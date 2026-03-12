@@ -1,24 +1,23 @@
 import { AppShell } from "@/components/app-shell";
 import { AuthStatusCard } from "@/components/auth-status-card";
-import { PageIntro } from "@/components/page-intro";
 import { getAuthState } from "@/lib/auth/server";
+import { getRequestLocale, pickLocale } from "@/lib/locale";
 
 export default async function ProfilePage() {
+  const locale = await getRequestLocale();
   const authState = await getAuthState();
 
   return (
     <AppShell
+      locale={locale}
       eyebrow=""
-      title="Профиль"
+      title={pickLocale(locale, {
+        ru: "Профиль",
+        kk: "Профиль"
+      })}
       description=""
     >
-      {/* <PageIntro
-        eyebrow="Данные пользователя"
-        title=""
-        description=""
-      /> */}
-
-      <AuthStatusCard profile={authState.profile} score={authState.score} />
+      <AuthStatusCard locale={locale} profile={authState.profile} score={authState.score} />
 
       {authState.profile ? (
         <section
@@ -32,18 +31,18 @@ export default async function ProfilePage() {
           }}
         >
           <InfoRow
-            label="Telegram"
+            label={pickLocale(locale, { ru: "Telegram", kk: "Telegram" })}
             value={
               authState.profile.telegram_username
                 ? `@${authState.profile.telegram_username}`
-                : "username не указан"
+                : pickLocale(locale, { ru: "username не указан", kk: "username көрсетілмеген" })
             }
           />
           <InfoRow
-            label="Telegram ID"
-            value={String(authState.profile.telegram_user_id ?? "Не указан")}
+            label={pickLocale(locale, { ru: "Telegram ID", kk: "Telegram ID" })}
+            value={String(authState.profile.telegram_user_id ?? pickLocale(locale, { ru: "Не указан", kk: "Көрсетілмеген" }))}
           />
-          <InfoRow label="Очки" value={String(authState.score)} />
+          <InfoRow label={pickLocale(locale, { ru: "Очки", kk: "Ұпай" })} value={String(authState.score)} />
           {/* <InfoRow
             label="Аватар"
             value={authState.profile.avatar_url ? "Получен из Telegram" : "Пока отсутствует"}

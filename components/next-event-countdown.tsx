@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { AppLocale } from "@/lib/locale";
 
 const EVENT_DAYS = [14, 15, 16, 17, 18, 19, 20];
 const TIME_ZONE = "Asia/Almaty";
@@ -59,7 +60,7 @@ function getZonedMidnightTimestamp(year: number, month: number, day: number) {
   return Date.UTC(year, month - 1, day, 0, 0, 0) - offset;
 }
 
-function getNextEventCountdown(now: Date): CountdownState {
+function getNextEventCountdown(now: Date, locale: AppLocale): CountdownState {
   const zonedNow = getZonedDateParts(now);
   const currentTimestamp = now.getTime();
 
@@ -81,7 +82,7 @@ function getNextEventCountdown(now: Date): CountdownState {
   const diff = Math.max(0, target.timestamp - currentTimestamp);
 
   return {
-    label: `${target.day} марта`,
+    label: locale === "kk" ? `${target.day} наурыз` : `${target.day} марта`,
     days: Math.floor(diff / (1000 * 60 * 60 * 24)),
     hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
     minutes: Math.floor((diff / (1000 * 60)) % 60),
@@ -93,19 +94,19 @@ function formatUnit(value: number) {
   return String(value).padStart(2, "0");
 }
 
-export function NextEventCountdown() {
+export function NextEventCountdown({ locale = "ru" }: { locale?: AppLocale }) {
   const [countdown, setCountdown] = useState<CountdownState | null>(null);
 
   useEffect(() => {
     const updateCountdown = () => {
-      setCountdown(getNextEventCountdown(new Date()));
+      setCountdown(getNextEventCountdown(new Date(), locale));
     };
 
     updateCountdown();
     const intervalId = window.setInterval(updateCountdown, 1000);
 
     return () => window.clearInterval(intervalId);
-  }, []);
+  }, [locale]);
 
   if (!countdown) {
     return null;
@@ -125,7 +126,8 @@ export function NextEventCountdown() {
       }}
     >
       <p style={{ margin: 0, color: "var(--muted)", fontSize: 14 }}>
-        До следующего дня Наурыза: <strong style={{ color: "var(--fg)" }}>{countdown.label}</strong>
+        {locale === "kk" ? "Келесі Наурыз күніне дейін: " : "До следующего дня Наурыза: "}
+        <strong style={{ color: "var(--fg)" }}>{countdown.label}</strong>
       </p>
       <p
         style={{

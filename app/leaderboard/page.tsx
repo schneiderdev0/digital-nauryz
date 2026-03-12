@@ -1,9 +1,11 @@
 import { AppShell } from "@/components/app-shell";
+import { getRequestLocale, pickLocale } from "@/lib/locale";
 import { demoLeaderboard } from "@/lib/mock-data";
 import { env } from "@/lib/env";
 import { getLeaderboard } from "@/lib/supabase/bootstrap";
 
 export default async function LeaderboardPage() {
+  const locale = await getRequestLocale();
   const leaderboard = env.hasSupabase
     ? await getLeaderboard().catch(() => null)
     : null;
@@ -18,9 +20,16 @@ export default async function LeaderboardPage() {
 
   return (
     <AppShell
+      locale={locale}
       eyebrow=""
-      title="Общий рейтинг участников"
-      description="Список топа пользователей с наибольшим количеством балов"
+      title={pickLocale(locale, {
+        ru: "Общий рейтинг участников",
+        kk: "Қатысушылардың жалпы рейтингі"
+      })}
+      description={pickLocale(locale, {
+        ru: "Список топа пользователей с наибольшим количеством балов",
+        kk: "Ең көп ұпай жинаған пайдаланушылар тізімі"
+      })}
     >
       <section style={{ display: "grid", gap: 10, marginTop: -10 }}>
         <h2
@@ -31,7 +40,10 @@ export default async function LeaderboardPage() {
             lineHeight: 1
           }}
         >
-          Лидеры Наурыза
+          {pickLocale(locale, {
+            ru: "Лидеры Наурыза",
+            kk: "Наурыз көшбасшылары"
+          })}
         </h2>
         {entries.map((entry) => (
           <div
@@ -51,7 +63,10 @@ export default async function LeaderboardPage() {
             <div>
               <div style={{ fontWeight: 700 }}>{entry.name}</div>
               <div style={{ color: "var(--muted)", fontSize: 13 }}>
-                Серия: {entry.streak}
+                {pickLocale(locale, {
+                  ru: "Серия",
+                  kk: "Серия"
+                })}: {entry.streak}
               </div>
             </div>
             <strong>{entry.score}</strong>

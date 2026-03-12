@@ -9,10 +9,11 @@ import { Day20SportsExperience } from "@/components/day-20-sports-experience";
 import { EventDetail } from "@/components/event-detail";
 import { FloatingBackButton } from "@/components/floating-back-button";
 import { getEventDefinitions } from "@/lib/events";
+import { getRequestLocale } from "@/lib/locale";
 import { getEventBySlug } from "@/lib/routes";
 
 export function generateStaticParams() {
-  return getEventDefinitions().map((event) => ({ slug: event.slug }));
+  return getEventDefinitions("ru").map((event) => ({ slug: event.slug }));
 }
 
 export default async function EventPage({
@@ -20,32 +21,34 @@ export default async function EventPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const locale = await getRequestLocale();
   const { slug } = await params;
-  const event = getEventBySlug(slug);
+  const event = getEventBySlug(slug, locale);
 
   return (
     <AppShell
+      locale={locale}
       eyebrow={event.dateLabel}
       title={event.title}
       description={event.subtitle}
     >
-      <FloatingBackButton />
+      <FloatingBackButton locale={locale} />
       {event.slug === "day-14-meetings" ? (
-        <Day14MeetingsExperience />
+        <Day14MeetingsExperience locale={locale} />
       ) : event.slug === "day-15-kindness" ? (
-        <Day15KindnessExperience />
+        <Day15KindnessExperience locale={locale} />
       ) : event.slug === "day-16-culture" ? (
-        <Day16CultureExperience />
+        <Day16CultureExperience locale={locale} />
       ) : event.slug === "day-17-family" ? (
-        <Day17FamilyExperience />
+        <Day17FamilyExperience locale={locale} />
       ) : event.slug === "day-18-outfit" ? (
-        <Day18OutfitExperience />
+        <Day18OutfitExperience locale={locale} />
       ) : event.slug === "day-19-renewal" ? (
-        <Day19RenewalExperience />
+        <Day19RenewalExperience locale={locale} />
       ) : event.slug === "day-20-sports" ? (
-        <Day20SportsExperience />
+        <Day20SportsExperience locale={locale} />
       ) : (
-        <EventDetail event={event} />
+        <EventDetail locale={locale} event={event} />
       )}
     </AppShell>
   );

@@ -11,7 +11,7 @@ import {
 
 type RequestState = "idle" | "loading" | "saving";
 
-export function Day19RenewalExperience() {
+export function Day19RenewalExperience({ locale: _locale = "ru" }: { locale?: AppLocale }) {
   const [state, setState] = useState<Day19State | null>(null);
   const [requestState, setRequestState] = useState<RequestState>("loading");
   const [goal, setGoal] = useState("");
@@ -637,3 +637,4 @@ const cardStyle = {
   background: "rgba(255, 255, 255, 0.72)",
   border: "1px solid var(--line)"
 } as const;
+import type { AppLocale } from "@/lib/locale";

@@ -5,17 +5,23 @@ import "@/app/globals.css";
 import { TelegramAuthBootstrap } from "@/components/telegram-auth-bootstrap";
 import { getAuthState } from "@/lib/auth/server";
 import { env } from "@/lib/env";
+import { getAppMetadata, getRequestLocale } from "@/lib/locale";
 
-export const metadata: Metadata = {
-  title: "Цифровой Наурыз",
-  description: "Telegram Web App для интерактивных активностей Наурыза",
-  manifest: "/manifest.webmanifest",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Цифровой Наурыз"
-  }
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getRequestLocale();
+  const meta = getAppMetadata(locale);
+
+  return {
+    title: meta.title,
+    description: meta.description,
+    manifest: "/manifest.webmanifest",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: meta.title
+    }
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#f4d17a",
@@ -29,9 +35,10 @@ export default async function RootLayout({
   children
 }: Readonly<{ children: React.ReactNode }>) {
   const authState = await getAuthState();
+  const locale = await getRequestLocale();
 
   return (
-    <html lang="ru" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body suppressHydrationWarning>
         <Script
           src="https://telegram.org/js/telegram-web-app.js"

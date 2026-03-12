@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 
 import type { ProfileRow } from "@/lib/auth/server";
+import type { AppLocale } from "@/lib/locale";
 import { getTelegramInitDataRaw } from "@/lib/telegram";
 
 import { AuthStatusCard } from "@/components/auth-status-card";
 import { LoadingRing } from "@/components/loading-ring";
 
 type AuthStatusCardClientProps = {
+  locale: AppLocale;
   profile: ProfileRow | null;
   score: number;
 };
@@ -17,6 +19,7 @@ const MAX_PENDING_ATTEMPTS = 24;
 const RETRY_DELAY_MS = 350;
 
 export function AuthStatusCardClient({
+  locale,
   profile,
   score
 }: AuthStatusCardClientProps) {
@@ -79,13 +82,28 @@ export function AuthStatusCardClient({
 
   return (
     <>
-      <AuthStatusCard profile={profile} score={score} authPending={false} />
-      {authPending ? <TelegramAuthPendingModal /> : null}
+      <AuthStatusCard locale={locale} profile={profile} score={score} authPending={false} />
+      {authPending ? <TelegramAuthPendingModal locale={locale} /> : null}
     </>
   );
 }
 
-function TelegramAuthPendingModal() {
+function TelegramAuthPendingModal({ locale }: { locale: AppLocale }) {
+  const copy =
+    locale === "kk"
+      ? {
+          label: "Telegram аккаунтын қосып жатырмыз",
+          title: "Telegram аккаунтын қосып жатырмыз",
+          description:
+            "Бірнеше секунд күтіңіз. Біз Telegram деректерін өңдеп, басты экран ашылғанға дейін сессияны көтеріп жатырмыз."
+        }
+      : {
+          label: "Подключаем Telegram-аккаунт",
+          title: "Подключаем Telegram-аккаунт",
+          description:
+            "Подождите пару секунд. Мы обрабатываем данные Telegram и поднимаем сессию, прежде чем открыть главный экран."
+        };
+
   return (
     <div
       style={{
@@ -113,12 +131,11 @@ function TelegramAuthPendingModal() {
           textAlign: "center"
         }}
       >
-        <LoadingRing size={52} label="Подключаем Telegram-аккаунт" />
+        <LoadingRing size={52} locale={locale} label={copy.label} />
         <div style={{ display: "grid", gap: 8 }}>
-          <strong style={{ fontSize: 22 }}>Подключаем Telegram-аккаунт</strong>
+          <strong style={{ fontSize: 22 }}>{copy.title}</strong>
           <span style={{ color: "var(--muted)", lineHeight: 1.5 }}>
-            Подождите пару секунд. Мы обрабатываем данные Telegram и поднимаем сессию,
-            прежде чем открыть главный экран.
+            {copy.description}
           </span>
         </div>
       </div>

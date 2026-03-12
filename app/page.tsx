@@ -6,21 +6,46 @@ import { LeaderboardPreview } from "@/components/leaderboard-preview";
 import { NextEventCountdown } from "@/components/next-event-countdown";
 import { getAuthState } from "@/lib/auth/server";
 import { getEventDefinitions } from "@/lib/events";
+import { getRequestLocale, pickLocale } from "@/lib/locale";
 
 export default async function HomePage() {
-  const events = getEventDefinitions();
+  const locale = await getRequestLocale();
+  const events = getEventDefinitions(locale);
   const authState = await getAuthState();
 
   return (
     <AppShell
+      locale={locale}
       eyebrow=""
-      title="Цифровой Наурыз"
-      titleAddon={<NextEventCountdown />}
+      title={pickLocale(locale, {
+        ru: "Цифровой Наурыз",
+        kk: "Цифрлық Наурыз"
+      })}
+      titleAddon={<NextEventCountdown locale={locale} />}
       description=""
     >
-      <AuthStatusCardClient profile={authState.profile} score={authState.score} />
-      <EventGrid events={events} />
-      <LeaderboardPreview />
+      <AuthStatusCardClient locale={locale} profile={authState.profile} score={authState.score} />
+      <a
+        href="https://www.instagram.com/titan.tou/"
+        target="_blank"
+        rel="noreferrer"
+        style={{
+          display: "inline-flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: 52,
+          padding: "0 18px",
+          borderRadius: 18,
+          background: "var(--accent-strong)",
+          color: "white",
+          fontWeight: 600,
+          textAlign: "center"
+        }}
+      >
+        {locale === "kk" ? "Instagram-ға өту" : "Перейти в Instagram"}
+      </a>
+      <EventGrid locale={locale} events={events} />
+      <LeaderboardPreview locale={locale} />
     </AppShell>
   );
 }

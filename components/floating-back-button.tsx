@@ -1,14 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import type { AppLocale } from "@/lib/locale";
 
-export function FloatingBackButton() {
+export function FloatingBackButton({ locale = "ru" }: { locale?: AppLocale }) {
   const router = useRouter();
 
   return (
     <button
       type="button"
-      aria-label="Назад"
+      aria-label={locale === "kk" ? "Артқа" : "Назад"}
       onClick={() => {
         if (window.history.length > 1) {
           router.back();

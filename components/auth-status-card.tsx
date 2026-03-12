@@ -1,21 +1,65 @@
 import Link from "next/link";
 
 import { env } from "@/lib/env";
+import type { AppLocale } from "@/lib/locale";
 import type { ProfileRow } from "@/lib/auth/server";
 
 import { LoadingRing } from "@/components/loading-ring";
 
 type AuthStatusCardProps = {
+  locale?: AppLocale;
   profile: ProfileRow | null;
   score: number;
   authPending?: boolean;
 };
 
 export function AuthStatusCard({
+  locale = "ru",
   profile,
   score,
   authPending = false
 }: AuthStatusCardProps) {
+  const copy =
+    locale === "kk"
+      ? {
+          telegramConnected: "Telegram қосылған",
+          points: "Ұпай",
+          processingLabel: "Telegram аккаунтын өңдеп жатырмыз",
+          processingTitle: "Telegram аккаунтын қосып жатырмыз",
+          processingDescription:
+            "Қосымша Telegram деректерін алып, сессияны көтеріп жатыр. Әдетте бұл бірнеше секунд алады.",
+          signInTitle: "Telegram арқылы кіру",
+          signInDescription:
+            "Егер қосымша Telegram Web App ішінде ашылса, сессия автоматты түрде қосылады.",
+          supabase: "Supabase",
+          connected: "Қосылған",
+          notConfigured: "Бапталмаған",
+          bot: "Бот",
+          notSpecified: "Көрсетілмеген",
+          openViaTelegram: "Telegram арқылы ашу",
+          botNameHint:
+            "Пайдаланушыға ботқа тікелей сілтеме беру үшін `NEXT_PUBLIC_TELEGRAM_BOT_NAME` мәнін толтырыңыз."
+        }
+      : {
+          telegramConnected: "Telegram подключен",
+          points: "Очки",
+          processingLabel: "Обрабатываем Telegram-аккаунт",
+          processingTitle: "Подключаем Telegram-аккаунт",
+          processingDescription:
+            "Приложение получило данные Telegram и поднимает сессию. Обычно это занимает пару секунд.",
+          signInTitle: "Вход через Telegram",
+          signInDescription:
+            "Если приложение открыто внутри Telegram Web App, сессия поднимется автоматически.",
+          supabase: "Supabase",
+          connected: "Подключен",
+          notConfigured: "Не настроен",
+          bot: "Бот",
+          notSpecified: "Не указан",
+          openViaTelegram: "Открыть через Telegram",
+          botNameHint:
+            "Заполните `NEXT_PUBLIC_TELEGRAM_BOT_NAME`, чтобы дать пользователю прямую ссылку на бота."
+        };
+
   const botLink = env.telegramBotName
     ? `https://t.me/${env.telegramBotName}?startapp=nauryz`
     : null;
@@ -51,7 +95,7 @@ export function AuthStatusCard({
           <div style={{ display: "grid", gap: 4 }}>
             <strong style={{ fontSize: 20 }}>{profile.display_name}</strong>
             <span style={{ color: "var(--muted)" }}>
-              {profile.telegram_username ? `@${profile.telegram_username}` : "Telegram подключен"}
+              {profile.telegram_username ? `@${profile.telegram_username}` : copy.telegramConnected}
             </span>
           </div>
         </div>
@@ -63,7 +107,7 @@ export function AuthStatusCard({
             gap: 10
           }}
         >
-          <Metric label="Очки" value={String(score)} />
+          <Metric label={copy.points} value={String(score)} />
           {/* <Metric label="Telegram ID" value={String(profile.telegram_user_id ?? "n/a")} />
           <Metric label="Статус" value="Авторизован" /> */}
         </div>
@@ -100,11 +144,11 @@ export function AuthStatusCard({
           textAlign: "center"
         }}
       >
-        <LoadingRing size={46} label="Обрабатываем Telegram-аккаунт" />
+        <LoadingRing size={46} locale={locale} label={copy.processingLabel} />
         <div style={{ display: "grid", gap: 6 }}>
-          <strong style={{ fontSize: 20 }}>Подключаем Telegram-аккаунт</strong>
+          <strong style={{ fontSize: 20 }}>{copy.processingTitle}</strong>
           <span style={{ color: "var(--muted)", lineHeight: 1.5 }}>
-            Приложение получило данные Telegram и поднимает сессию. Обычно это занимает пару секунд.
+            {copy.processingDescription}
           </span>
         </div>
       </section>
@@ -123,15 +167,15 @@ export function AuthStatusCard({
       }}
     >
       <div style={{ display: "grid", gap: 6 }}>
-        <strong style={{ fontSize: 20 }}>Вход через Telegram</strong>
+        <strong style={{ fontSize: 20 }}>{copy.signInTitle}</strong>
         <span style={{ color: "var(--muted)" }}>
-          Если приложение открыто внутри Telegram Web App, сессия поднимется автоматически.
+          {copy.signInDescription}
         </span>
       </div>
 
       <div style={{ display: "grid", gap: 8 }}>
-        <InfoRow label="Supabase" value={env.hasSupabase ? "Подключен" : "Не настроен"} />
-        <InfoRow label="Бот" value={env.telegramBotName ? `@${env.telegramBotName}` : "Не указан"} />
+        <InfoRow label={copy.supabase} value={env.hasSupabase ? copy.connected : copy.notConfigured} />
+        <InfoRow label={copy.bot} value={env.telegramBotName ? `@${env.telegramBotName}` : copy.notSpecified} />
       </div>
 
       {botLink ? (
@@ -147,11 +191,11 @@ export function AuthStatusCard({
             color: "white"
           }}
         >
-          Открыть через Telegram
+          {copy.openViaTelegram}
         </a>
       ) : (
         <span style={{ color: "var(--muted)" }}>
-          Заполните `NEXT_PUBLIC_TELEGRAM_BOT_NAME`, чтобы дать пользователю прямую ссылку на бота.
+          {copy.botNameHint}
         </span>
       )}
     </section>

@@ -1,12 +1,18 @@
+import type { AppLocale } from "@/lib/locale";
+
 type LoadingRingProps = {
   size?: number;
   label?: string;
+  locale?: AppLocale;
 };
 
 export function LoadingRing({
   size = 44,
-  label = "Загрузка"
+  label,
+  locale = "ru"
 }: LoadingRingProps) {
+  const resolvedLabel = label ?? (locale === "kk" ? "Жүктеу" : "Загрузка");
+
   return (
     <div
       style={{
@@ -15,7 +21,7 @@ export function LoadingRing({
         gap: 12
       }}
       aria-live="polite"
-      aria-label={label}
+      aria-label={resolvedLabel}
     >
       <span
         className="ring-loader"

@@ -10,7 +10,7 @@ import {
 
 type RequestState = "idle" | "loading" | "submitting";
 
-export function Day18OutfitExperience() {
+export function Day18OutfitExperience({ locale: _locale = "ru" }: { locale?: AppLocale }) {
   const [state, setState] = useState<Day18State | null>(null);
   const [requestState, setRequestState] = useState<RequestState>("loading");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -465,3 +465,4 @@ const feedbackStyle = {
   color: "var(--text)",
   border: "1px solid rgba(179, 73, 16, 0.14)"
 } as const;
+import type { AppLocale } from "@/lib/locale";

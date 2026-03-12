@@ -7,7 +7,7 @@ import { LoadingRing } from "@/components/loading-ring";
 
 type RequestState = "idle" | "loading";
 
-export function Day16CultureExperience() {
+export function Day16CultureExperience({ locale: _locale = "ru" }: { locale?: AppLocale }) {
   const [state, setState] = useState<Day16QuizState | null>(null);
   const [requestState, setRequestState] = useState<RequestState>("loading");
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -569,3 +569,4 @@ const cardStyle = {
   display: "grid",
   gap: 14
 } as const;
+import type { AppLocale } from "@/lib/locale";

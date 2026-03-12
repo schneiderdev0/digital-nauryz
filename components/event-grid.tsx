@@ -1,9 +1,26 @@
 import Link from "next/link";
 import type { Route } from "next";
 
+import type { AppLocale } from "@/lib/locale";
 import { EventDefinition } from "@/lib/types";
 
-export function EventGrid({ events }: { events: EventDefinition[] }) {
+export function EventGrid({
+  events,
+  locale
+}: {
+  events: EventDefinition[];
+  locale: AppLocale;
+}) {
+  const copy = locale === "kk"
+    ? {
+        title: "Күндер бойынша белсенділіктер",
+        dateRange: "14-20 наурыз"
+      }
+    : {
+        title: "Активности по дням",
+        dateRange: "14-20 марта"
+      };
+
   return (
     <section style={{ display: "grid", gap: 12 }}>
       <div
@@ -14,8 +31,8 @@ export function EventGrid({ events }: { events: EventDefinition[] }) {
           gap: 12
         }}
       >
-        <h2 style={{ margin: 0, fontSize: 22 }}>Активности по дням</h2>
-        <span style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1 }}>14-20 марта</span>
+        <h2 style={{ margin: 0, fontSize: 22 }}>{copy.title}</h2>
+        <span style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1 }}>{copy.dateRange}</span>
       </div>
 
       <div style={{ display: "grid", gap: 12 }}>
@@ -34,7 +51,7 @@ export function EventGrid({ events }: { events: EventDefinition[] }) {
           >
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
               <strong>{event.dateLabel}</strong>
-              <StatusChip status={event.status} />
+              <StatusChip locale={locale} status={event.status} />
             </div>
             <div style={{ display: "grid", gap: 6 }}>
               <h3 style={{ margin: 0, fontSize: 20 }}>{event.title}</h3>
@@ -48,12 +65,25 @@ export function EventGrid({ events }: { events: EventDefinition[] }) {
   );
 }
 
-function StatusChip({ status }: { status: EventDefinition["status"] }) {
-  const labels = {
-    upcoming: "Скоро",
-    active: "Открыто",
-    completed: "Завершено"
-  };
+function StatusChip({
+  status,
+  locale
+}: {
+  status: EventDefinition["status"];
+  locale: AppLocale;
+}) {
+  const labels =
+    locale === "kk"
+      ? {
+          upcoming: "Жақында",
+          active: "Ашық",
+          completed: "Аяқталды"
+        }
+      : {
+          upcoming: "Скоро",
+          active: "Открыто",
+          completed: "Завершено"
+        };
 
   const colors = {
     upcoming: "rgba(77, 45, 24, 0.08)",

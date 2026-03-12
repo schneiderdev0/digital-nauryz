@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { Route } from "next";
+import type { AppLocale } from "@/lib/locale";
 
 type AppShellProps = {
+  locale?: AppLocale;
   eyebrow: string;
   title: string;
   description: string;
@@ -10,6 +12,7 @@ type AppShellProps = {
 };
 
 export function AppShell({
+  locale = "ru",
   eyebrow,
   title,
   description,
@@ -17,6 +20,17 @@ export function AppShell({
   children
 }: AppShellProps) {
   const hasHeaderMeta = Boolean(eyebrow || description || titleAddon);
+  const nav = locale === "kk"
+    ? {
+        home: "Басты бет",
+        leaderboard: "Рейтинг",
+        profile: "Профиль"
+      }
+    : {
+        home: "Главная",
+        leaderboard: "Рейтинг",
+        profile: "Профиль"
+      };
 
   return (
     <main className="page-shell">
@@ -69,9 +83,9 @@ export function AppShell({
             gap: 10
           }}
         >
-          <NavLink href="/">Главная</NavLink>
-          <NavLink href="/leaderboard">Рейтинг</NavLink>
-          <NavLink href="/profile">Профиль</NavLink>
+          <NavLink href="/">{nav.home}</NavLink>
+          <NavLink href="/leaderboard">{nav.leaderboard}</NavLink>
+          <NavLink href="/profile">{nav.profile}</NavLink>
         </nav>
 
         {children}

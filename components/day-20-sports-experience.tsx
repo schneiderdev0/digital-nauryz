@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { LoadingRing } from "@/components/loading-ring";
+import type { AppLocale } from "@/lib/locale";
 import type { Day20RaceRoom, Day20State } from "@/lib/day20";
 
 type RequestState = "idle" | "loading";
@@ -13,7 +14,7 @@ const SOLO_FRAME_MS = 100;
 const PVP_POLL_MS = 1000;
 const PVP_FLUSH_MS = 220;
 
-export function Day20SportsExperience() {
+export function Day20SportsExperience({ locale: _locale = "ru" }: { locale?: AppLocale }) {
   const [state, setState] = useState<Day20State | null>(null);
   const [requestState, setRequestState] = useState<RequestState>("loading");
   const [mode, setMode] = useState<LocalMode>("solo");

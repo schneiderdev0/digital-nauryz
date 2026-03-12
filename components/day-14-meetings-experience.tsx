@@ -10,7 +10,7 @@ const MAX_REASSIGNMENTS = 3;
 
 type RequestState = "idle" | "loading";
 
-export function Day14MeetingsExperience() {
+export function Day14MeetingsExperience({ locale: _locale = "ru" }: { locale?: AppLocale }) {
   const [state, setState] = useState<Day14MeetingState | null>(null);
   const [requestState, setRequestState] = useState<RequestState>("loading");
   const [showQr, setShowQr] = useState(false);
@@ -692,3 +692,4 @@ function formatMessageTime(isoString: string) {
     minute: "2-digit"
   }).format(new Date(isoString));
 }
+import type { AppLocale } from "@/lib/locale";

@@ -2,18 +2,34 @@ import Link from "next/link";
 
 import { AppShell } from "@/components/app-shell";
 import { PageIntro } from "@/components/page-intro";
+import { getRequestLocale, pickLocale } from "@/lib/locale";
 
-export default function NotFound() {
+export default async function NotFound() {
+  const locale = await getRequestLocale();
+
   return (
     <AppShell
+      locale={locale}
       eyebrow="404"
-      title="Страница не найдена"
-      description="Маршрут отсутствует или ещё не подготовлен."
+      title={pickLocale(locale, {
+        ru: "Страница не найдена",
+        kk: "Бет табылмады"
+      })}
+      description={pickLocale(locale, {
+        ru: "Маршрут отсутствует или ещё не подготовлен.",
+        kk: "Маршрут жоқ немесе әлі дайындалмаған."
+      })}
     >
       <PageIntro
-        eyebrow="Навигация"
-        title="Вернуться в приложение"
-        description="Основные разделы уже доступны на главной странице."
+        eyebrow={pickLocale(locale, { ru: "Навигация", kk: "Навигация" })}
+        title={pickLocale(locale, {
+          ru: "Вернуться в приложение",
+          kk: "Қосымшаға оралу"
+        })}
+        description={pickLocale(locale, {
+          ru: "Основные разделы уже доступны на главной странице.",
+          kk: "Негізгі бөлімдер басты бетте қолжетімді."
+        })}
       />
       <Link
         href="/"
@@ -26,7 +42,7 @@ export default function NotFound() {
           color: "white"
         }}
       >
-        На главную
+        {pickLocale(locale, { ru: "На главную", kk: "Басты бетке" })}
       </Link>
     </AppShell>
   );
