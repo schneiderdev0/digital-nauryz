@@ -27,34 +27,34 @@ export default async function HomePage() {
       <AuthStatusCardClient locale={locale} profile={authState.profile} score={authState.score} />
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
+          display: "grid",
+          gridTemplateColumns: "auto minmax(0, 1fr)",
           alignItems: "center",
-          gap: 12,
-          flexWrap: "wrap"
+          gap: 12
         }}
       >
         <LocaleSwitcher locale={locale} />
+        <a
+          href="https://www.instagram.com/titan.tou/"
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            display: "inline-flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 52,
+            padding: "0 18px",
+            borderRadius: 18,
+            background: "var(--accent-strong)",
+            color: "white",
+            fontWeight: 600,
+            textAlign: "center",
+            whiteSpace: "normal"
+          }}
+        >
+          {locale === "kk" ? "Біздің Instagram-ға өту" : "Перейти в наш Instagram"}
+        </a>
       </div>
-      <a
-        href="https://www.instagram.com/titan.tou/"
-        target="_blank"
-        rel="noreferrer"
-        style={{
-          display: "inline-flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: 52,
-          padding: "0 18px",
-          borderRadius: 18,
-          background: "var(--accent-strong)",
-          color: "white",
-          fontWeight: 600,
-          textAlign: "center"
-        }}
-      >
-        {locale === "kk" ? "Біздің Instagram-ға өту" : "Перейти в наш Instagram"}
-      </a>
       <EventGrid locale={locale} events={events} />
       <LeaderboardPreview locale={locale} />
     </AppShell>
