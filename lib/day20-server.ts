@@ -457,6 +457,22 @@ async function loadDay20Room(client: AppSupabaseClient, userId: string) {
   return loadRaceRoom(client, userId, latestRoomId);
 }
 
+async function getOwnedDay20Room(client: AppSupabaseClient, userId: string) {
+  const roomId = await findLatestRoomIdForUser(client, userId);
+
+  if (!roomId) {
+    throw new Error("RACE_NOT_FOUND");
+  }
+
+  const room = await loadRaceRoom(client, userId, roomId);
+
+  if (!room) {
+    throw new Error("RACE_NOT_FOUND");
+  }
+
+  return room;
+}
+
 export async function getDay20State(userId: string): Promise<Day20State> {
   const client = getSupabaseAdminClient();
   const [participation, room, leaderboard] = await Promise.all([
@@ -632,6 +648,27 @@ export async function joinDay20RaceRoom(userId: string, inviteCode: string) {
   }
 
   await ensureParticipation(client, userId, { lastPvpRoomId: roomResult.data.id });
+
+  return getDay20State(userId);
+}
+
+export async function cancelDay20RaceRoom(userId: string) {
+  const client = getSupabaseAdminClient();
+  const room = await getOwnedDay20Room(client, userId);
+
+  if (room.status !== "waiting") {
+    throw new Error("RACE_NOT_WAITING");
+  }
+
+  if (!room.isOwner) {
+    throw new Error("RACE_CANCEL_FORBIDDEN");
+  }
+
+  const result = await client.from("race_rooms").delete().eq("id", room.id);
+
+  if (result.error) {
+    throw result.error;
+  }
 
   return getDay20State(userId);
 }

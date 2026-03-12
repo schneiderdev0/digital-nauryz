@@ -304,17 +304,10 @@ export function Day16CultureExperience() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gridTemplateColumns: "minmax(0, 1fr)",
               gap: 10
             }}
           >
-            <button
-              type="button"
-              onClick={() => void shareResult(state.score, state.correctAnswersCount, state.totalQuestions)}
-              style={buttonStyle("secondary")}
-            >
-              Поделиться результатом
-            </button>
             <button
               type="button"
               onClick={() => void submitAction("/api/day16/restart")}
@@ -453,28 +446,6 @@ function AnswerFeedbackCard({ state }: { state: Extract<Day16QuizState, { status
       <span>{state.latestAnswer.explanation}</span>
     </div>
   );
-}
-
-async function shareResult(score: number, correctAnswersCount: number, totalQuestions: number) {
-  const text = `Я прошел(а) квиз Наурыза и набрал(а) ${score} очков: ${correctAnswersCount}/${totalQuestions} правильных ответов.`;
-
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: "День культуры",
-        text
-      });
-      return;
-    } catch {
-      return;
-    }
-  }
-
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    return;
-  }
 }
 
 function LoadingCard({ text }: { text: string }) {

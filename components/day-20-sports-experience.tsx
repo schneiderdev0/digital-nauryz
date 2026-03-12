@@ -10,8 +10,8 @@ type LocalMode = "solo" | "pvp";
 type SoloStatus = "idle" | "racing" | "finishing";
 
 const SOLO_FRAME_MS = 100;
-const PVP_POLL_MS = 700;
-const PVP_FLUSH_MS = 180;
+const PVP_POLL_MS = 1000;
+const PVP_FLUSH_MS = 220;
 
 export function Day20SportsExperience() {
   const [state, setState] = useState<Day20State | null>(null);
@@ -65,6 +65,7 @@ export function Day20SportsExperience() {
 
   useEffect(() => {
     if (!state?.room || state.room.status === "finished") {
+      pendingPvpTapsRef.current = 0;
       return;
     }
 
@@ -122,7 +123,9 @@ export function Day20SportsExperience() {
           roomId: state.room.id,
           tapCount: pending
         })
-      }).then(() => loadState(false));
+      }).catch(() => {
+        pendingPvpTapsRef.current = 0;
+      });
     }, PVP_FLUSH_MS);
 
     return () => {
@@ -226,7 +229,38 @@ export function Day20SportsExperience() {
 
     setState(payload as Day20State);
     setMode("pvp");
+    setInviteCodeInput("");
     setFeedback("Вы подключились к гонке.");
+    setRequestState("idle");
+  };
+
+  const cancelRace = async () => {
+    setRequestState("loading");
+    setFeedback(null);
+
+    const response = await fetch("/api/day20/pvp/cancel", {
+      method: "POST",
+      credentials: "same-origin"
+    });
+    const payload = (await response.json().catch(() => null)) as
+      | Day20State
+      | { error?: string }
+      | null;
+
+    if (!response.ok || !payload || "error" in payload) {
+      setFeedback(
+        payload && "error" in payload
+          ? payload.error ?? "Не удалось отменить комнату."
+          : "Не удалось отменить комнату."
+      );
+      setRequestState("idle");
+      return;
+    }
+
+    pendingPvpTapsRef.current = 0;
+    setOptimisticPvpTaps(null);
+    setState(payload as Day20State);
+    setFeedback("Комната отменена.");
     setRequestState("idle");
   };
 
@@ -450,6 +484,14 @@ export function Day20SportsExperience() {
                         style={buttonStyle("secondary")}
                       >
                         Поделиться кодом
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void cancelRace()}
+                        disabled={requestState === "loading" || !pvpRoom.isOwner}
+                        style={buttonStyle("ghost", requestState === "loading" || !pvpRoom.isOwner)}
+                      >
+                        Отменить комнату
                       </button>
                     </>
                   ) : pvpRoom.status === "finished" ? (
@@ -741,7 +783,7 @@ function modeButtonStyle(active: boolean) {
   } as const;
 }
 
-function buttonStyle(kind: "primary" | "secondary", disabled = false) {
+function buttonStyle(kind: "primary" | "secondary" | "ghost", disabled = false) {
   return {
     padding: "14px 18px",
     borderRadius: 18,
@@ -751,6 +793,8 @@ function buttonStyle(kind: "primary" | "secondary", disabled = false) {
         ? disabled
           ? "rgba(179, 73, 16, 0.45)"
           : "var(--accent-strong)"
+        : kind === "ghost"
+          ? "rgba(255,255,255,0.56)"
         : "white",
     color: kind === "primary" ? "white" : "var(--text)",
     cursor: disabled ? "not-allowed" : "pointer",
