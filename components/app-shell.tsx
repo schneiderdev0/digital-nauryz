@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import type { AppLocale } from "@/lib/locale";
+import { NavPrefetch } from "@/components/nav-prefetch";
 
 type AppShellProps = {
   locale?: AppLocale;
@@ -34,6 +35,7 @@ export function AppShell({
 
   return (
     <main className="page-shell">
+      <NavPrefetch />
       <section
         className="surface"
         style={{
@@ -104,6 +106,7 @@ function NavLink({
   return (
     <Link
       href={href}
+      prefetch
       style={{
         display: "flex",
         alignItems: "center",

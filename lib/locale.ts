@@ -1,8 +1,24 @@
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 export type AppLocale = "ru" | "kk";
+export const APP_LOCALE_COOKIE = "app_locale";
+
+export function normalizeLocale(value: string | null | undefined): AppLocale | null {
+  if (value === "ru" || value === "kk") {
+    return value;
+  }
+
+  return null;
+}
 
 export async function getRequestLocale(): Promise<AppLocale> {
+  const cookieStore = await cookies();
+  const savedLocale = normalizeLocale(cookieStore.get(APP_LOCALE_COOKIE)?.value);
+
+  if (savedLocale) {
+    return savedLocale;
+  }
+
   const headerStore = await headers();
   const acceptLanguage = headerStore.get("accept-language")?.toLowerCase() ?? "";
 

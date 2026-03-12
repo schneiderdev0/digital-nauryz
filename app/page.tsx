@@ -1,8 +1,8 @@
 import { AppShell } from "@/components/app-shell";
-import { AuthStatusCard } from "@/components/auth-status-card";
 import { AuthStatusCardClient } from "@/components/auth-status-card-client";
 import { EventGrid } from "@/components/event-grid";
 import { LeaderboardPreview } from "@/components/leaderboard-preview";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { NextEventCountdown } from "@/components/next-event-countdown";
 import { getAuthState } from "@/lib/auth/server";
 import { getEventDefinitions } from "@/lib/events";
@@ -25,6 +25,17 @@ export default async function HomePage() {
       description=""
     >
       <AuthStatusCardClient locale={locale} profile={authState.profile} score={authState.score} />
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+          flexWrap: "wrap"
+        }}
+      >
+        <LocaleSwitcher locale={locale} />
+      </div>
       <a
         href="https://www.instagram.com/titan.tou/"
         target="_blank"
@@ -42,7 +53,7 @@ export default async function HomePage() {
           textAlign: "center"
         }}
       >
-        {locale === "kk" ? "Instagram-ға өту" : "Перейти в Instagram"}
+        {locale === "kk" ? "Біздің Instagram-ға өту" : "Перейти в наш Instagram"}
       </a>
       <EventGrid locale={locale} events={events} />
       <LeaderboardPreview locale={locale} />
