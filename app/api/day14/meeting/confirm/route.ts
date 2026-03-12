@@ -10,22 +10,24 @@ export async function POST(request: Request) {
   try {
     const userId = await requireDay14UserId();
     const body = (await request.json().catch(() => null)) as
-      | { pairId?: string; partnerCode?: string; scannedPayload?: string }
+      | { pairId?: string; scannedPayload?: string }
       | null;
     const pairId = body?.pairId;
     const scannedData = body?.scannedPayload
       ? extractDay14QrData(body.scannedPayload)
       : null;
     const effectivePairId = pairId ?? scannedData?.pairId ?? null;
-    const partnerCode =
-      scannedData?.partnerCode ?? body?.partnerCode?.trim().toUpperCase() ?? null;
+    const partnerCode = scannedData?.partnerCode ?? null;
 
     if (!effectivePairId) {
       return NextResponse.json({ error: "pairId is required." }, { status: 400 });
     }
 
     if (!partnerCode) {
-      return NextResponse.json({ error: "partnerCode is required." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Не удалось прочитать QR партнера. Повторите сканирование." },
+        { status: 400 }
+      );
     }
 
     const state = await confirmDay14Meeting(userId, effectivePairId, partnerCode);

@@ -14,7 +14,6 @@ export function Day14MeetingsExperience() {
   const [state, setState] = useState<Day14MeetingState | null>(null);
   const [requestState, setRequestState] = useState<RequestState>("loading");
   const [showQr, setShowQr] = useState(false);
-  const [partnerCodeInput, setPartnerCodeInput] = useState("");
   const [messageInput, setMessageInput] = useState("");
   const [messageState, setMessageState] = useState<RequestState>("idle");
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -110,7 +109,6 @@ export function Day14MeetingsExperience() {
     }
 
     setState(payload as Day14MeetingState);
-    setPartnerCodeInput("");
     setFeedback(options?.successMessage ?? null);
     setRequestState("idle");
   };
@@ -169,7 +167,7 @@ export function Day14MeetingsExperience() {
     }
 
     if (!webApp?.showScanQrPopup) {
-      setFeedback("В этом клиенте Telegram сканер QR недоступен. Используйте ручной ввод кода партнера.");
+      setFeedback("В этом клиенте Telegram сканер QR недоступен. Подтверждение встречи работает только через QR.");
       return;
     }
 
@@ -340,7 +338,7 @@ export function Day14MeetingsExperience() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
                 gap: 10
               }}
             >
@@ -367,7 +365,7 @@ export function Day14MeetingsExperience() {
           <div style={{ display: "grid", gap: 6 }}>
             <h3 style={{ margin: 0 }}>Подтверждение встречи</h3>
             <p style={{ margin: 0, color: "var(--muted)" }}>
-              У каждого участника есть свой QR и резервный код. Встреча считается подтвержденной сразу после того, как один из вас считает QR второго участника.
+              У каждого участника есть свой QR. Встреча считается подтвержденной сразу после того, как один из вас считает QR второго участника.
             </p>
           </div>
 
@@ -408,34 +406,10 @@ export function Day14MeetingsExperience() {
               ) : (
                 <LoadingRing size={48} label="Генерируем QR" />
               )}
-              <strong
-                style={{
-                  maxWidth: "100%",
-                  fontSize: 18,
-                  letterSpacing: 1,
-                  lineHeight: 1.1,
-                  whiteSpace: "nowrap"
-                }}
-              >
-                {pair.myConfirmationCode}
-              </strong>
               <span style={{ color: "var(--muted)", textAlign: "center" }}>
-                Покажите этот QR партнеру. Если сканер не откроется, он сможет ввести резервный код вручную.
+                Покажите этот QR партнеру, чтобы он мог подтвердить встречу сканированием.
               </span>
             </div>
-          ) : null}
-
-          {pair.status === "matched" ? (
-            <label style={{ display: "grid", gap: 8 }}>
-              <span>Резервный ввод кода партнера</span>
-              <input
-                value={partnerCodeInput}
-                onChange={(event) => setPartnerCodeInput(event.target.value.toUpperCase())}
-                placeholder="Например, A1B2C3D4"
-                maxLength={8}
-                style={inputStyle}
-              />
-            </label>
           ) : null}
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -446,19 +420,6 @@ export function Day14MeetingsExperience() {
               style={buttonStyle("primary", !canConfirm)}
             >
               Сканировать QR партнера
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                void submitAction("/api/day14/meeting/confirm", {
-                  body: JSON.stringify({ pairId: pair.id, partnerCode: partnerCodeInput }),
-                  successMessage: "Код партнера принят. Встреча подтверждена."
-                })
-              }
-              disabled={!canConfirm || partnerCodeInput.trim().length < 6}
-              style={buttonStyle("secondary", !canConfirm || partnerCodeInput.trim().length < 6)}
-            >
-              Подтвердить по коду
             </button>
             <button
               type="button"
@@ -718,7 +679,6 @@ const inputStyle = {
   color: "var(--text)",
   textTransform: "uppercase" as const
 };
-
 function formatTime(isoString: string) {
   return new Intl.DateTimeFormat("ru-RU", {
     hour: "2-digit",
