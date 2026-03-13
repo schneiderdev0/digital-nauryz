@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 import { AppShell } from "@/components/app-shell";
 import { Day14MeetingsExperience } from "@/components/day-14-meetings-experience";
 import { Day15KindnessExperience } from "@/components/day-15-kindness-experience";
@@ -8,7 +10,7 @@ import { Day19RenewalExperience } from "@/components/day-19-renewal-experience";
 import { Day20SportsExperience } from "@/components/day-20-sports-experience";
 import { EventDetail } from "@/components/event-detail";
 import { FloatingBackButton } from "@/components/floating-back-button";
-import { getEventDefinitions } from "@/lib/events";
+import { getEventDefinitions, isEventUnlocked } from "@/lib/events";
 import { getRequestLocale } from "@/lib/locale";
 import { getEventBySlug } from "@/lib/routes";
 
@@ -24,6 +26,10 @@ export default async function EventPage({
   const locale = await getRequestLocale();
   const { slug } = await params;
   const event = getEventBySlug(slug, locale);
+
+  if (!isEventUnlocked(event.day)) {
+    redirect("/");
+  }
 
   return (
     <AppShell

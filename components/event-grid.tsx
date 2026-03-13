@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Route } from "next";
 
 import type { AppLocale } from "@/lib/locale";
+import { isEventUnlocked } from "@/lib/events";
 import { EventDefinition } from "@/lib/types";
 
 export function EventGrid({
@@ -36,30 +37,55 @@ export function EventGrid({
       </div>
 
       <div style={{ display: "grid", gap: 12 }}>
-        {events.map((event) => (
-          <Link
-            key={event.slug}
-            href={`/events/${event.slug}` as Route}
-            style={{
-              display: "grid",
-              gap: 10,
-              padding: 16,
-              borderRadius: 20,
-              border: "1px solid var(--line)",
-              background: "var(--surface-strong)"
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-              <strong>{event.dateLabel}</strong>
-              <StatusChip locale={locale} status={event.status} />
+        {events.map((event) => {
+          const unlocked = isEventUnlocked(event.day);
+
+          const card = (
+            <div
+              style={{
+                display: "grid",
+                gap: 10,
+                padding: 16,
+                borderRadius: 20,
+                border: "1px solid var(--line)",
+                background: "var(--surface-strong)",
+                opacity: unlocked ? 1 : 0.74,
+                cursor: unlocked ? "pointer" : "default"
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                <strong>{event.dateLabel}</strong>
+                <StatusChip locale={locale} status={event.status} />
+              </div>
+              <div style={{ display: "grid", gap: 6 }}>
+                <h3 style={{ margin: 0, fontSize: 20 }}>{event.title}</h3>
+                <p style={{ margin: 0, color: "var(--muted)" }}>{event.subtitle}</p>
+                <p style={{ margin: 0, lineHeight: 1.45 }}>{event.description}</p>
+                {!unlocked ? (
+                  <span style={{ color: "var(--muted)", fontSize: 13 }}>
+                    {locale === "kk"
+                      ? "Бұл белсенділік өз күні келгенде ашылады."
+                      : "Эта активность откроется в свой день."}
+                  </span>
+                ) : null}
+              </div>
             </div>
-            <div style={{ display: "grid", gap: 6 }}>
-              <h3 style={{ margin: 0, fontSize: 20 }}>{event.title}</h3>
-              <p style={{ margin: 0, color: "var(--muted)" }}>{event.subtitle}</p>
-              <p style={{ margin: 0, lineHeight: 1.45 }}>{event.description}</p>
+          );
+
+          return unlocked ? (
+            <Link
+              key={event.slug}
+              href={`/events/${event.slug}` as Route}
+              style={{ display: "block" }}
+            >
+              {card}
+            </Link>
+          ) : (
+            <div key={event.slug}>
+              {card}
             </div>
-          </Link>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

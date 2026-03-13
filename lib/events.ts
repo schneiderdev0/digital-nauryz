@@ -1,6 +1,8 @@
 import type { AppLocale } from "@/lib/locale";
 import { EventDefinition } from "@/lib/types";
 
+const EVENT_TIME_ZONE = "Asia/Almaty";
+
 const localizedEvents = {
   ru: [
     {
@@ -164,16 +166,43 @@ const localizedEvents = {
 
 export function getEventDefinitions(locale: AppLocale = "ru"): EventDefinition[] {
   const baseEvents = localizedEvents[locale];
+  const currentEventDay = getCurrentMarchDayInAlmaty();
 
   return baseEvents.map((event) => {
-    if (event.day < 14) {
-      return { ...event, status: "completed" };
+    if (currentEventDay < event.day) {
+      return { ...event, status: "upcoming" };
     }
 
-    if (event.day === 14) {
+    if (currentEventDay === event.day) {
       return { ...event, status: "active" };
     }
 
-    return event;
+    return { ...event, status: "completed" };
   });
+}
+
+export function isEventUnlocked(day: number) {
+  return getCurrentMarchDayInAlmaty() >= day;
+}
+
+function getCurrentMarchDayInAlmaty() {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: EVENT_TIME_ZONE,
+    month: "2-digit",
+    day: "2-digit"
+  });
+
+  const parts = formatter.formatToParts(new Date());
+  const month = Number(parts.find((part) => part.type === "month")?.value ?? "0");
+  const day = Number(parts.find((part) => part.type === "day")?.value ?? "0");
+
+  if (month < 3) {
+    return 0;
+  }
+
+  if (month > 3) {
+    return 31;
+  }
+
+  return day;
 }
