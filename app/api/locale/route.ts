@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { APP_LOCALE_COOKIE, normalizeLocale } from "@/lib/locale";
+import { APP_LOCALE_COOKIE, normalizeLocale } from "@/lib/locale-core";
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as

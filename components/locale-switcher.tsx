@@ -3,7 +3,7 @@
 import { startTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { APP_LOCALE_COOKIE, type AppLocale } from "@/lib/locale";
+import { APP_LOCALE_COOKIE, type AppLocale } from "@/lib/locale-core";
 
 export function LocaleSwitcher({ locale }: { locale: AppLocale }) {
   const router = useRouter();
