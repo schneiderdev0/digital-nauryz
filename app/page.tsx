@@ -1,7 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 import { AuthStatusCardClient } from "@/components/auth-status-card-client";
 import { EventGrid } from "@/components/event-grid";
-import { LeaderboardPreview } from "@/components/leaderboard-preview";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { NextEventCountdown } from "@/components/next-event-countdown";
 import { getAuthState } from "@/lib/auth/server";
@@ -56,7 +55,6 @@ export default async function HomePage() {
         </a>
       </div>
       <EventGrid locale={locale} events={events} />
-      <LeaderboardPreview locale={locale} />
     </AppShell>
   );
 }
