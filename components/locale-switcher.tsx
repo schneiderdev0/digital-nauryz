@@ -3,7 +3,7 @@
 import { startTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import type { AppLocale } from "@/lib/locale";
+import { APP_LOCALE_COOKIE, type AppLocale } from "@/lib/locale";
 
 export function LocaleSwitcher({ locale }: { locale: AppLocale }) {
   const router = useRouter();
@@ -17,14 +17,7 @@ export function LocaleSwitcher({ locale }: { locale: AppLocale }) {
     setPendingLocale(nextLocale);
 
     try {
-      await fetch("/api/locale", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json"
-        },
-        credentials: "same-origin",
-        body: JSON.stringify({ locale: nextLocale })
-      });
+      document.cookie = `${APP_LOCALE_COOKIE}=${nextLocale}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
 
       startTransition(() => {
         router.refresh();
