@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 
 import {
   getTelegramAuthEmail,
@@ -14,6 +15,15 @@ import { Database } from "@/lib/database.types";
 import { env } from "@/lib/env";
 import { fetchProfileByTelegramUserId } from "@/lib/supabase/queries";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+
+function isUserAlreadyExistsError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+  return message.includes("already") || message.includes("registered") || message.includes("exists");
+}
 
 function getErrorMessage(error: unknown) {
   if (error instanceof TelegramAuthError) {
@@ -89,24 +99,48 @@ export async function POST(request: Request) {
       });
 
       if (createUserResult.error || !createUserResult.data.user) {
-        throw createUserResult.error ?? new Error("Unable to create auth user.");
-      }
+        if (isUserAlreadyExistsError(createUserResult.error)) {
+          const { url } = env.requireSupabase();
+          const recoveryClient = createClient<Database>(
+            env.supabaseInternalUrl ?? url,
+            env.requireSupabase().anonKey,
+            {
+              auth: {
+                persistSession: false,
+                autoRefreshToken: false
+              }
+            }
+          );
+          const recoverySignInResult = await recoveryClient.auth.signInWithPassword({
+            email,
+            password
+          });
 
-      authUserId = createUserResult.data.user.id;
-    } else {
-      const updatePasswordResult = await adminClient.auth.admin.updateUserById(authUserId, {
-        password,
-        user_metadata: {
-          telegram_user_id: telegramUser.id,
-          telegram_username: telegramUser.username ?? null,
-          display_name: displayName,
-          avatar_url: telegramUser.photo_url ?? null
+          if (recoverySignInResult.error || !recoverySignInResult.data.user) {
+            throw recoverySignInResult.error ?? createUserResult.error ?? new Error("Unable to recover auth user.");
+          }
+
+          authUserId = recoverySignInResult.data.user.id;
+        } else {
+          throw createUserResult.error ?? new Error("Unable to create auth user.");
         }
-      });
-
-      if (updatePasswordResult.error) {
-        throw updatePasswordResult.error;
+      } else {
+        authUserId = createUserResult.data.user.id;
       }
+    }
+
+    const updatePasswordResult = await adminClient.auth.admin.updateUserById(authUserId, {
+      password,
+      user_metadata: {
+        telegram_user_id: telegramUser.id,
+        telegram_username: telegramUser.username ?? null,
+        display_name: displayName,
+        avatar_url: telegramUser.photo_url ?? null
+      }
+    });
+
+    if (updatePasswordResult.error) {
+      throw updatePasswordResult.error;
     }
 
     const upsertProfileResult = await adminClient.from("profiles").upsert(
