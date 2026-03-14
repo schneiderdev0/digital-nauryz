@@ -8,12 +8,17 @@ export type LeaderboardRow =
   Database["public"]["Views"]["leaderboard"]["Row"];
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
-export async function fetchLeaderboard(client: AppSupabaseClient, limit = 10) {
+export async function fetchLeaderboard(
+  client: AppSupabaseClient,
+  limit = 10,
+  offset = 0
+) {
   return client
     .from("leaderboard")
     .select("user_id, display_name, telegram_username, score")
     .order("score", { ascending: false })
-    .limit(limit);
+    .order("display_name", { ascending: true })
+    .range(offset, offset + limit - 1);
 }
 
 export async function fetchProfileById(

@@ -1,22 +1,37 @@
 import { AppShell } from "@/components/app-shell";
+import { LeaderboardInfiniteList } from "@/components/leaderboard-infinite-list";
 import { getRequestLocale, pickLocale } from "@/lib/locale";
 import { demoLeaderboard } from "@/lib/mock-data";
 import { env } from "@/lib/env";
-import { getLeaderboard } from "@/lib/supabase/bootstrap";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { fetchLeaderboard } from "@/lib/supabase/queries";
+
+const LEADERBOARD_PAGE_SIZE = 20;
 
 export default async function LeaderboardPage() {
   const locale = await getRequestLocale();
-  const leaderboard = env.hasSupabase
-    ? await getLeaderboard().catch(() => null)
-    : null;
+  let entries = demoLeaderboard;
+  let initialHasMore = false;
 
-  const entries =
-    leaderboard?.map((entry, index) => ({
-      rank: index + 1,
-      name: entry.display_name,
-      score: entry.score,
-      streak: 0
-    })) ?? demoLeaderboard;
+  if (env.hasSupabase) {
+    try {
+      const client = await getSupabaseServerClient();
+      const result = await fetchLeaderboard(client, LEADERBOARD_PAGE_SIZE + 1, 0);
+
+      if (!result.error) {
+        const rows = result.data ?? [];
+        initialHasMore = rows.length > LEADERBOARD_PAGE_SIZE;
+        entries = rows.slice(0, LEADERBOARD_PAGE_SIZE).map((entry, index) => ({
+          rank: index + 1,
+          name: entry.display_name,
+          score: entry.score,
+          streak: 0
+        }));
+      }
+    } catch {
+      void 0;
+    }
+  }
 
   return (
     <AppShell
@@ -31,48 +46,11 @@ export default async function LeaderboardPage() {
         kk: "Ең көп ұпай жинаған пайдаланушылар тізімі"
       })}
     >
-      <section style={{ display: "grid", gap: 10, marginTop: -10 }}>
-        <h2
-          style={{
-            margin: 0,
-            fontFamily: "var(--font-heading), serif",
-            fontSize: 34,
-            lineHeight: 1
-          }}
-        >
-          {pickLocale(locale, {
-            ru: "Лидеры Наурыза",
-            kk: "Наурыз көшбасшылары"
-          })}
-        </h2>
-        {entries.map((entry) => (
-          <div
-            key={entry.rank}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "40px 1fr auto",
-              alignItems: "center",
-              gap: 12,
-              padding: 16,
-              borderRadius: 18,
-              background: "var(--surface-strong)",
-              border: "1px solid var(--line)"
-            }}
-          >
-            <strong>#{entry.rank}</strong>
-            <div>
-              <div style={{ fontWeight: 700 }}>{entry.name}</div>
-              <div style={{ color: "var(--muted)", fontSize: 13 }}>
-                {pickLocale(locale, {
-                  ru: "Серия",
-                  kk: "Серия"
-                })}: {entry.streak}
-              </div>
-            </div>
-            <strong>{entry.score}</strong>
-          </div>
-        ))}
-      </section>
+      <LeaderboardInfiniteList
+        initialEntries={entries}
+        initialHasMore={initialHasMore}
+        locale={locale}
+      />
     </AppShell>
   );
 }
