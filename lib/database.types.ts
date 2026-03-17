@@ -524,6 +524,12 @@ export type Database = {
         };
         Returns: Database["public"]["Tables"]["family_groups"]["Row"];
       };
+      leave_family_group: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
       send_kindness_card: {
         Args: {
           p_message: string;

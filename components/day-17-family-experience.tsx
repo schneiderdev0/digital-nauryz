@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import type { Day17State } from "@/lib/day17";
+import type { AppLocale } from "@/lib/locale";
 import { getTelegramInitData } from "@/lib/telegram";
 import { LoadingRing } from "@/components/loading-ring";
 
@@ -124,6 +125,25 @@ export function Day17FamilyExperience({ locale: _locale = "ru" }: { locale?: App
     setState(payload as Day17State);
     setFeedback(successMessage ?? null);
     setRequestState("idle");
+  };
+
+  const leaveGroup = async () => {
+    if (!state?.group || state.group.status !== "forming") {
+      return;
+    }
+
+    const confirmationMessage = state.group.isOwner
+      ? state.group.memberCount > 1
+        ? "Вы выйдете из семьи, а роль создателя перейдет следующему участнику. Продолжить?"
+        : "Вы единственный участник семьи. После выхода группа будет удалена. Продолжить?"
+      : "Выйти из семьи? После этого можно будет вступить в другую группу по коду.";
+
+    if (!window.confirm(confirmationMessage)) {
+      return;
+    }
+
+    autoJoinAttemptedRef.current = true;
+    await submitAction("/api/day17/leave", "Вы вышли из семейной группы.");
   };
 
   if (!state) {
@@ -266,6 +286,21 @@ export function Day17FamilyExperience({ locale: _locale = "ru" }: { locale?: App
                 >
                   Скопировать ссылку
                 </button>
+                <button
+                  type="button"
+                  onClick={() => void leaveGroup()}
+                  disabled={requestState === "loading"}
+                  style={buttonStyle("danger", requestState === "loading")}
+                >
+                  {requestState === "loading" ? "Выходим..." : "Выйти из семьи"}
+                </button>
+                <span style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.5 }}>
+                  {state.group.isOwner
+                    ? state.group.memberCount > 1
+                      ? "Если создатель выйдет, право приглашать автоматически перейдет следующему участнику."
+                      : "Если выйти сейчас, пустая семейная группа будет удалена."
+                    : "После выхода можно снова вступить в другую семью по коду приглашения."}
+                </span>
               </div>
             ) : null}
           </section>
@@ -482,17 +517,19 @@ function StatusBadge({ label, tone }: { label: string; tone: "accent" | "success
   );
 }
 
-function buttonStyle(tone: "primary" | "secondary", disabled = false) {
+function buttonStyle(tone: "primary" | "secondary" | "danger", disabled = false) {
   return {
-    border: tone === "primary" ? "none" : "1px solid var(--line)",
+    border: tone === "primary" ? "none" : tone === "danger" ? "1px solid rgba(160, 38, 38, 0.18)" : "1px solid var(--line)",
     borderRadius: 18,
     padding: "14px 18px",
     background: disabled
       ? "rgba(79, 45, 24, 0.18)"
       : tone === "primary"
         ? "var(--accent-strong)"
+        : tone === "danger"
+          ? "rgba(160, 38, 38, 0.08)"
         : "white",
-    color: tone === "primary" ? "white" : "var(--text)",
+    color: tone === "primary" ? "white" : tone === "danger" ? "#8f1d1d" : "var(--text)",
     cursor: disabled ? "not-allowed" : "pointer",
     fontWeight: 600,
     opacity: disabled ? 0.7 : 1
@@ -517,4 +554,3 @@ const cardStyle = {
   display: "grid",
   gap: 14
 } as const;
-import type { AppLocale } from "@/lib/locale";

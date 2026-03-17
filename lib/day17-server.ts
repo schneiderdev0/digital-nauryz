@@ -156,3 +156,16 @@ export async function joinDay17Group(userId: string, inviteCode: string) {
 
   return getDay17State(userId);
 }
+
+export async function leaveDay17Group(userId: string) {
+  const client = getSupabaseAdminClient();
+  const result = await client.rpc("leave_family_group", {
+    p_user_id: userId
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  return getDay17State(userId);
+}
