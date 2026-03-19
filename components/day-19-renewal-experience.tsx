@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { LoadingRing } from "@/components/loading-ring";
+import type { AppLocale } from "@/lib/locale";
 import {
   DAY19_TREES,
   type Day19State,
@@ -66,12 +67,12 @@ export function Day19RenewalExperience({ locale: _locale = "ru" }: { locale?: Ap
 
   const saveCard = async () => {
     if (!state?.isAuthenticated) {
-      return;
+      return null;
     }
 
     if (!goal.trim()) {
       setFeedback("Напишите цель на год, чтобы сохранить карточку.");
-      return;
+      return null;
     }
 
     setRequestState("saving");
@@ -101,28 +102,54 @@ export function Day19RenewalExperience({ locale: _locale = "ru" }: { locale?: Ap
           : "Не удалось сохранить карточку."
       );
       setRequestState("idle");
-      return;
+      return null;
     }
 
     const nextState = payload as Day19State;
     setState(nextState);
     setGoal(nextState.goal);
     setTreeId(nextState.treeId);
-    setFeedback("Карточка обновлена и цель сохранена.");
     setRequestState("idle");
+    return nextState;
   };
 
   const shareCard = async () => {
-    if (isSharing) {
+    if (!state?.isAuthenticated || isSharing || requestState === "saving") {
       return;
     }
 
+    const isFirstSave = !state.hasCreatedCard;
     setIsSharing(true);
+    setFeedback(null);
+    let cardSaved = false;
 
     try {
-      await shareDay19Card(svgMarkup, selectedTree.name);
+      const nextState = await saveCard();
+      if (!nextState || !nextState.isAuthenticated) {
+        return;
+      }
+      cardSaved = true;
+
+      const nextTree =
+        DAY19_TREES.find((tree) => tree.id === nextState.treeId) ?? DAY19_TREES[0];
+      const nextSvgMarkup = buildDay19CardSvg({
+        displayName: nextState.displayName,
+        goal: nextState.goal.trim() || "Моя цель на этот год",
+        treeId: nextState.treeId
+      });
+
+      await shareDay19Card(nextSvgMarkup, nextTree.name);
+      setFeedback(
+        isFirstSave
+          ? `Карточка сохранена. +${nextState.rewardPoints} очков начислены.`
+          : "Карточка обновлена."
+      );
     } catch {
-      setFeedback("Не удалось открыть меню отправки карточки.");
+      setFeedback(
+        cardSaved
+          ? "Карточка сохранена, но открыть меню отправки не удалось."
+          : "Не удалось открыть меню отправки карточки."
+      );
     } finally {
       setIsSharing(false);
     }
@@ -270,10 +297,14 @@ export function Day19RenewalExperience({ locale: _locale = "ru" }: { locale?: Ap
               <button
                 type="button"
                 onClick={() => void shareCard()}
-                disabled={isSharing}
-                style={buttonStyle("secondary", isSharing)}
+                disabled={isSharing || requestState === "saving"}
+                style={buttonStyle("secondary", isSharing || requestState === "saving")}
               >
-                {isSharing ? "Открываем..." : "Поделиться"}
+                {requestState === "saving"
+                  ? "Сохраняем..."
+                  : isSharing
+                    ? "Открываем..."
+                    : "Поделиться"}
               </button>
             </div>
           </section>
@@ -637,4 +668,3 @@ const cardStyle = {
   background: "rgba(255, 255, 255, 0.72)",
   border: "1px solid var(--line)"
 } as const;
-import type { AppLocale } from "@/lib/locale";

@@ -94,17 +94,16 @@ async function hasRewardEvent(client: AppSupabaseClient, userId: string) {
 
 export async function getDay19State(userId: string): Promise<Day19State> {
   const client = getSupabaseAdminClient();
-  const [participation, profile, rewardGranted] = await Promise.all([
+  const [participation, profile] = await Promise.all([
     getParticipation(client, userId),
-    getProfile(client, userId),
-    hasRewardEvent(client, userId)
+    getProfile(client, userId)
   ]);
   const metadata = asMetadata(participation?.metadata ?? null);
 
   return {
     isAuthenticated: true,
     rewardPoints: DAY19_REWARD_POINTS,
-    hasCreatedCard: rewardGranted,
+    hasCreatedCard: Boolean(participation?.completed_at),
     displayName: profile?.display_name ?? "Участник",
     goal: metadata?.goal ?? "",
     treeId: metadata?.treeId ?? DAY19_TREES[0].id,
