@@ -64,13 +64,17 @@ export function Day19RenewalExperience({ locale: _locale = "ru" }: { locale?: Ap
     () => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`,
     [svgMarkup]
   );
+  const normalizedGoal = normalizeGoal(goal);
+  const hasUnsavedChanges =
+    state?.isAuthenticated &&
+    (normalizedGoal !== state.goal || treeId !== state.treeId);
 
   const saveCard = async () => {
     if (!state?.isAuthenticated) {
       return null;
     }
 
-    if (!goal.trim()) {
+    if (!normalizedGoal) {
       setFeedback("Напишите цель на год, чтобы сохранить карточку.");
       return null;
     }
@@ -85,7 +89,7 @@ export function Day19RenewalExperience({ locale: _locale = "ru" }: { locale?: Ap
         "content-type": "application/json"
       },
       body: JSON.stringify({
-        goal,
+        goal: normalizedGoal,
         treeId
       })
     });
@@ -113,43 +117,64 @@ export function Day19RenewalExperience({ locale: _locale = "ru" }: { locale?: Ap
     return nextState;
   };
 
+  const handleSaveCard = async () => {
+    if (!state?.isAuthenticated || requestState === "saving") {
+      return;
+    }
+
+    const isFirstSave = !state.hasCreatedCard;
+    const nextState = await saveCard();
+
+    if (!nextState || !nextState.isAuthenticated) {
+      return;
+    }
+
+    setFeedback(
+      isFirstSave
+        ? `Карточка сохранена. +${nextState.rewardPoints} очков начислены.`
+        : "Карточка обновлена."
+    );
+  };
+
   const shareCard = async () => {
     if (!state?.isAuthenticated || isSharing || requestState === "saving") {
       return;
     }
 
-    const isFirstSave = !state.hasCreatedCard;
-    setIsSharing(true);
-    setFeedback(null);
-    let cardSaved = false;
-
-    try {
+    if (!state.hasCreatedCard || hasUnsavedChanges) {
+      const isFirstSave = !state.hasCreatedCard;
       const nextState = await saveCard();
+
       if (!nextState || !nextState.isAuthenticated) {
         return;
       }
-      cardSaved = true;
 
-      const nextTree =
-        DAY19_TREES.find((tree) => tree.id === nextState.treeId) ?? DAY19_TREES[0];
-      const nextSvgMarkup = buildDay19CardSvg({
-        displayName: nextState.displayName,
-        goal: nextState.goal.trim() || "Моя цель на этот год",
-        treeId: nextState.treeId
-      });
-
-      await shareDay19Card(nextSvgMarkup, nextTree.name);
       setFeedback(
         isFirstSave
-          ? `Карточка сохранена. +${nextState.rewardPoints} очков начислены.`
-          : "Карточка обновлена."
+          ? `Карточка сохранена. +${nextState.rewardPoints} очков начислены. Нажмите «Поделиться» ещё раз.`
+          : "Изменения сохранены. Нажмите «Поделиться» ещё раз."
       );
-    } catch {
-      setFeedback(
-        cardSaved
-          ? "Карточка сохранена, но открыть меню отправки не удалось."
-          : "Не удалось открыть меню отправки карточки."
-      );
+      return;
+    }
+
+    setIsSharing(true);
+    setFeedback(null);
+    try {
+      await shareDay19Card(svgMarkup, selectedTree.name);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.toLowerCase().includes("sharing is not supported")
+      ) {
+        const result = await downloadDay19Card(svgMarkup, selectedTree.name);
+        setFeedback(
+          result === "downloaded"
+            ? "Шаринг недоступен, карточка скачана на устройство."
+            : "Меню отправки открыто."
+        );
+      } else {
+        setFeedback("Не удалось открыть меню отправки карточки.");
+      }
     } finally {
       setIsSharing(false);
     }
@@ -296,6 +321,18 @@ export function Day19RenewalExperience({ locale: _locale = "ru" }: { locale?: Ap
             >
               <button
                 type="button"
+                onClick={() => void handleSaveCard()}
+                disabled={requestState === "saving" || isSharing}
+                style={buttonStyle("primary", requestState === "saving" || isSharing)}
+              >
+                {requestState === "saving"
+                  ? "Сохраняем..."
+                  : state.hasCreatedCard
+                    ? "Сохранить изменения"
+                    : "Сохранить карточку"}
+              </button>
+              <button
+                type="button"
                 onClick={() => void shareCard()}
                 disabled={isSharing || requestState === "saving"}
                 style={buttonStyle("secondary", isSharing || requestState === "saving")}
@@ -431,6 +468,10 @@ function splitText(value: string, maxLength: number) {
   }
 
   return lines.length > 0 ? lines : [value];
+}
+
+function normalizeGoal(value: string) {
+  return value.trim().replace(/\s+/g, " ").slice(0, 180);
 }
 
 function escapeXml(value: string) {
