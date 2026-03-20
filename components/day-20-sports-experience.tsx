@@ -4,12 +4,15 @@ import { useEffect, useRef, useState } from "react";
 
 import { LoadingRing } from "@/components/loading-ring";
 import type { AppLocale } from "@/lib/locale";
+import { getTelegramInitDataRaw } from "@/lib/telegram";
 import type { Day20RaceRoom, Day20State } from "@/lib/day20";
 
 type RequestState = "idle" | "loading";
 type LocalMode = "solo" | "pvp";
 type SoloStatus = "idle" | "racing" | "finishing";
 
+const AUTH_RETRY_LIMIT = 12;
+const AUTH_RETRY_MS = 750;
 const SOLO_FRAME_MS = 100;
 const PVP_POLL_MS = 1000;
 const PVP_FLUSH_MS = 220;
@@ -28,6 +31,7 @@ export function Day20SportsExperience({ locale: _locale = "ru" }: { locale?: App
   const soloDeadlineRef = useRef<number | null>(null);
   const soloTapsRef = useRef(0);
   const pendingPvpTapsRef = useRef(0);
+  const authRetryCountRef = useRef(0);
 
   const loadState = async (showSpinner = false) => {
     if (showSpinner) {
@@ -62,6 +66,40 @@ export function Day20SportsExperience({ locale: _locale = "ru" }: { locale?: App
   useEffect(() => {
     void loadState(true);
   }, []);
+
+  useEffect(() => {
+    if (state?.isAuthenticated !== false) {
+      authRetryCountRef.current = 0;
+      return;
+    }
+
+    const hasTelegramWebApp =
+      typeof window !== "undefined" &&
+      Boolean(
+        (window as Window & {
+          Telegram?: {
+            WebApp?: unknown;
+          };
+        }).Telegram?.WebApp
+      );
+    const hasTelegramInitData = Boolean(getTelegramInitDataRaw());
+
+    if (!hasTelegramWebApp && !hasTelegramInitData) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      if (authRetryCountRef.current >= AUTH_RETRY_LIMIT) {
+        window.clearInterval(intervalId);
+        return;
+      }
+
+      authRetryCountRef.current += 1;
+      void loadState(false);
+    }, AUTH_RETRY_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [state?.isAuthenticated]);
 
   useEffect(() => {
     if (!state?.room) {
