@@ -345,8 +345,9 @@ export function Day20SportsExperience({ locale: _locale = "ru" }: { locale?: App
         <div style={{ display: "grid", gap: 6 }}>
           <strong style={{ fontSize: 20 }}>Гонка на лошадях</strong>
           <span style={{ color: "var(--muted)", lineHeight: 1.5 }}>
-            Тренируйтесь в соло или выходите в PvP. Вторая лошадь подключается
-            по коду комнаты, а победитель PvP получает {state.rewardPoints} очков.
+            Тренируйтесь в соло или выходите в PvP. В первом соло-заезде вы
+            получаете столько очков, сколько сделали тапов, а победитель PvP
+            получает {state.rewardPoints} очков.
           </span>
         </div>
 
@@ -408,7 +409,8 @@ export function Day20SportsExperience({ locale: _locale = "ru" }: { locale?: App
                     <h3 style={{ margin: 0 }}>Соло-заезд</h3>
                     <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.5 }}>
                       За {state.soloDurationSeconds} секунд набейте как можно больше
-                      тапов и обновите свой личный рекорд.
+                      тапов и обновите свой личный рекорд. Только первый соло-заезд
+                      приносит очки по числу тапов.
                     </p>
                   </div>
 

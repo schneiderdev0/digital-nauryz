@@ -19,6 +19,14 @@ type Day20Metadata = {
   soloLastTaps: number;
 };
 
+function hasSavedSoloRun(value: Json | null) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  return "soloBestTaps" in value || "soloLastTaps" in value;
+}
+
 async function getAuthenticatedUserId() {
   const client = await getSupabaseServerClient();
   const {
@@ -511,6 +519,7 @@ export async function saveDay20SoloRun(userId: string, taps: number) {
   const client = getSupabaseAdminClient();
   const current = await getParticipation(client, userId);
   const metadata = asDay20Metadata(current?.metadata ?? null);
+  const isFirstSoloRun = !hasSavedSoloRun(current?.metadata ?? null);
   const normalizedTaps = Math.max(0, Math.min(500, Math.floor(taps)));
   const nextMetadata = {
     soloBestTaps: Math.max(metadata.soloBestTaps, normalizedTaps),
@@ -532,6 +541,22 @@ export async function saveDay20SoloRun(userId: string, taps: number) {
 
   if (result.error) {
     throw result.error;
+  }
+
+  if (isFirstSoloRun) {
+    const scoreResult = await client.from("score_events").insert({
+      user_id: userId,
+      event_day: DAY20_EVENT_DAY,
+      reason: "day20_solo_first_run",
+      points: normalizedTaps,
+      metadata: {
+        taps: normalizedTaps
+      }
+    });
+
+    if (scoreResult.error && scoreResult.error.code !== "23505") {
+      throw scoreResult.error;
+    }
   }
 
   return getDay20State(userId);
