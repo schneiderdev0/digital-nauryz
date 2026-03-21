@@ -2,7 +2,8 @@ type PublicEnvKey =
   | "NEXT_PUBLIC_SUPABASE_URL"
   | "NEXT_PUBLIC_SUPABASE_ANON_KEY"
   | "NEXT_PUBLIC_TELEGRAM_BOT_NAME"
-  | "NEXT_PUBLIC_TELEGRAM_DEBUG";
+  | "NEXT_PUBLIC_TELEGRAM_DEBUG"
+  | "NEXT_PUBLIC_ACTIVITIES_ENABLED";
 type ServerEnvKey =
   | "SUPABASE_INTERNAL_URL"
   | "SUPABASE_SERVICE_ROLE_KEY"
@@ -31,6 +32,7 @@ export const env = {
   supabaseInternalUrl: getOptionalEnv("SUPABASE_INTERNAL_URL"),
   telegramBotName: getOptionalEnv("NEXT_PUBLIC_TELEGRAM_BOT_NAME"),
   telegramDebug: getOptionalEnv("NEXT_PUBLIC_TELEGRAM_DEBUG") === "true",
+  activitiesEnabled: getOptionalEnv("NEXT_PUBLIC_ACTIVITIES_ENABLED") === "true",
   serviceRoleKey: getOptionalEnv("SUPABASE_SERVICE_ROLE_KEY"),
   telegramBotToken: getOptionalEnv("TELEGRAM_BOT_TOKEN"),
   telegramAuthSecret: getOptionalEnv("TELEGRAM_AUTH_SECRET"),

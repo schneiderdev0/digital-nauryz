@@ -2,7 +2,6 @@ import { AppShell } from "@/components/app-shell";
 import { AuthStatusCardClient } from "@/components/auth-status-card-client";
 import { EventGrid } from "@/components/event-grid";
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import { NextEventCountdown } from "@/components/next-event-countdown";
 import { getAuthState } from "@/lib/auth/server";
 import { getEventDefinitions } from "@/lib/events";
 import { getRequestLocale, pickLocale } from "@/lib/locale";
@@ -20,7 +19,6 @@ export default async function HomePage() {
         ru: "Цифровой Наурыз",
         kk: "Цифрлық Наурыз"
       })}
-      titleAddon={<NextEventCountdown locale={locale} />}
       description=""
     >
       <AuthStatusCardClient locale={locale} profile={authState.profile} score={authState.score} />

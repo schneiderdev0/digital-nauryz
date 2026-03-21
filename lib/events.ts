@@ -1,4 +1,5 @@
 import type { AppLocale } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { EventDefinition } from "@/lib/types";
 
 const EVENT_TIME_ZONE = "Asia/Almaty";
@@ -166,6 +167,11 @@ const localizedEvents = {
 
 export function getEventDefinitions(locale: AppLocale = "ru"): EventDefinition[] {
   const baseEvents = localizedEvents[locale];
+
+  if (!env.activitiesEnabled) {
+    return baseEvents.map((event) => ({ ...event, status: "disabled" }));
+  }
+
   const currentEventDay = getCurrentMarchDayInAlmaty();
 
   return baseEvents.map((event) => {
@@ -182,7 +188,7 @@ export function getEventDefinitions(locale: AppLocale = "ru"): EventDefinition[]
 }
 
 export function isEventUnlocked(day: number) {
-  return getCurrentMarchDayInAlmaty() >= day;
+  return env.activitiesEnabled && getCurrentMarchDayInAlmaty() >= day;
 }
 
 function getCurrentMarchDayInAlmaty() {

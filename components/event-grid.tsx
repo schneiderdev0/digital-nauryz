@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { Route } from "next";
 
 import type { AppLocale } from "@/lib/locale";
-import { isEventUnlocked } from "@/lib/events";
 import { EventDefinition } from "@/lib/types";
 
 export function EventGrid({
@@ -13,13 +12,17 @@ export function EventGrid({
   locale: AppLocale;
 }) {
   const copy = locale === "kk"
-    ? {
+      ? {
         title: "Күндер бойынша белсенділіктер",
-        dateRange: "14-20 наурыз"
+        dateRange: "14-20 наурыз",
+        disabledCardNote: "Бұл белсенділік уақытша қолжетімсіз.",
+        upcomingCardNote: "Бұл белсенділік өз күні келгенде ашылады."
       }
     : {
         title: "Активности по дням",
-        dateRange: "14-20 марта"
+        dateRange: "14-20 марта",
+        disabledCardNote: "Эта активность временно недоступна.",
+        upcomingCardNote: "Эта активность откроется в свой день."
       };
 
   return (
@@ -38,7 +41,8 @@ export function EventGrid({
 
       <div style={{ display: "grid", gap: 12 }}>
         {events.map((event) => {
-          const unlocked = isEventUnlocked(event.day);
+          const disabled = event.status === "disabled";
+          const unlocked = event.status === "active" || event.status === "completed";
 
           const card = (
             <div
@@ -49,7 +53,7 @@ export function EventGrid({
                 borderRadius: 20,
                 border: "1px solid var(--line)",
                 background: "var(--surface-strong)",
-                opacity: unlocked ? 1 : 0.74,
+                opacity: unlocked ? 1 : disabled ? 0.62 : 0.74,
                 cursor: unlocked ? "pointer" : "default"
               }}
             >
@@ -63,9 +67,7 @@ export function EventGrid({
                 <p style={{ margin: 0, lineHeight: 1.45 }}>{event.description}</p>
                 {!unlocked ? (
                   <span style={{ color: "var(--muted)", fontSize: 13 }}>
-                    {locale === "kk"
-                      ? "Бұл белсенділік өз күні келгенде ашылады."
-                      : "Эта активность откроется в свой день."}
+                    {disabled ? copy.disabledCardNote : copy.upcomingCardNote}
                   </span>
                 ) : null}
               </div>
@@ -103,18 +105,21 @@ function StatusChip({
       ? {
           upcoming: "Жақында",
           active: "Ашық",
-          completed: "Аяқталды"
+          completed: "Аяқталды",
+          disabled: "Өшірулі"
         }
       : {
           upcoming: "Скоро",
           active: "Открыто",
-          completed: "Завершено"
+          completed: "Завершено",
+          disabled: "Отключено"
         };
 
   const colors = {
     upcoming: "rgba(77, 45, 24, 0.08)",
     active: "rgba(47, 122, 82, 0.14)",
-    completed: "rgba(79, 45, 24, 0.08)"
+    completed: "rgba(79, 45, 24, 0.08)",
+    disabled: "rgba(81, 89, 105, 0.12)"
   };
 
   return (

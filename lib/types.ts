@@ -1,4 +1,4 @@
-export type EventStatus = "upcoming" | "active" | "completed";
+export type EventStatus = "upcoming" | "active" | "completed" | "disabled";
 
 export type EventSlug =
   | "day-14-meetings"

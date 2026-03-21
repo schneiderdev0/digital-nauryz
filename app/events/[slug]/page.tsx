@@ -27,7 +27,7 @@ export default async function EventPage({
   const { slug } = await params;
   const event = getEventBySlug(slug, locale);
 
-  if (!isEventUnlocked(event.day)) {
+  if (event.status === "disabled" || !isEventUnlocked(event.day)) {
     redirect("/");
   }
 
