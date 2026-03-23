@@ -19,7 +19,10 @@ export default async function HomePage() {
         ru: "Цифровой Наурыз",
         kk: "Цифрлық Наурыз"
       })}
-      description=""
+      description={pickLocale(locale, {
+        ru: 'Игра "Цифровой Наурыз" завершилась! С победителями игры скоро свяжутся.',
+        kk: '"Цифрлық Наурыз" ойыны аяқталды! Ойын жеңімпаздарымен жақын арада хабарласамыз.'
+      })}
     >
       <AuthStatusCardClient locale={locale} profile={authState.profile} score={authState.score} />
       <div
