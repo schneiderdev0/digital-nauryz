@@ -10,6 +10,10 @@ export default async function HomePage() {
   const locale = await getRequestLocale();
   const events = getEventDefinitions(locale);
   const authState = await getAuthState();
+  const completionMessage = pickLocale(locale, {
+    ru: 'Игра "Цифровой Наурыз" завершилась! С победителями игры скоро свяжутся.',
+    kk: '"Цифрлық Наурыз" ойыны аяқталды! Ойын жеңімпаздарымен жақын арада хабарласамыз.'
+  });
 
   return (
     <AppShell
@@ -19,10 +23,26 @@ export default async function HomePage() {
         ru: "Цифровой Наурыз",
         kk: "Цифрлық Наурыз"
       })}
-      description={pickLocale(locale, {
-        ru: 'Игра "Цифровой Наурыз" завершилась! С победителями игры скоро свяжутся.',
-        kk: '"Цифрлық Наурыз" ойыны аяқталды! Ойын жеңімпаздарымен жақын арада хабарласамыз.'
-      })}
+      description=""
+      titleAddon={
+        <div
+          style={{
+            margin: "4px auto 0",
+            maxWidth: 360,
+            padding: "16px 18px",
+            borderRadius: 18,
+            background: "rgba(47, 122, 82, 0.14)",
+            border: "1px solid rgba(47, 122, 82, 0.24)",
+            color: "var(--success)",
+            fontSize: 18,
+            fontWeight: 700,
+            lineHeight: 1.45,
+            textAlign: "center"
+          }}
+        >
+          {completionMessage}
+        </div>
+      }
     >
       <AuthStatusCardClient locale={locale} profile={authState.profile} score={authState.score} />
       <div
